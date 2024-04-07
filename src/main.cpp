@@ -1,5 +1,5 @@
 #pragma GCC optimize("O3,unroll-loops")
-// #pragma GCC target("avx2,bmi,bmi2,lzcnt,popcnt")
+#pragma GCC target("avx2,bmi,bmi2,lzcnt,popcnt")
 #include <iostream>
 #include <fstream>
 #include <memory>
@@ -16,6 +16,7 @@ namespace solution
 		std::ofstream sol_fs(sol_path, std::ios::binary);
 		std::ifstream bitmap_fs(bitmap_path, std::ios::binary);
 		const auto img = std::make_unique<float[]>(num_rows * num_cols);
+		float result[num_rows * num_cols];
 		bitmap_fs.read(reinterpret_cast<char *>(img.get()), sizeof(float) * num_rows * num_cols);
 		bitmap_fs.close();
 
@@ -41,6 +42,8 @@ namespace solution
 		// std::cout << std::endl;
 		// std::cout << "computed" << std::endl;
 
+		__mmask16 leftMask = _mm512_int2mask(0xFFFE);
+		__mmask16 rightMask = _mm512_int2mask(0x7FFF);
 		std::int32_t k = 0;
 		for (k = 0; k < num_rows * num_cols; k += 16)
 		{
@@ -54,30 +57,24 @@ namespace solution
 
 					if (ni >= 0 && ni < num_rows)
 					{
-						// __m512 pixels = _mm512_loadu_ps(&img[ni * num_cols + nj]);
-						float tempPixels[16];
-						std::copy(&img[ni * num_cols + nj], &img[ni * num_cols + nj] + 16, tempPixels);
+						__m512 pixels = _mm512_loadu_ps(&img[ni * num_cols + nj]);
+
 						if (nj < 0)
 						{
-							// std::cout << "l" << std::endl;
-							tempPixels[0] = 0.0f;
+							pixels = _mm512_maskz_mov_ps(leftMask, pixels);
 						}
 						if (nj + 15 >= num_cols)
 						{
-							// std::cout << "r" << std::endl;
-							tempPixels[15] = 0.0f;
+							pixels = _mm512_maskz_mov_ps(rightMask, pixels);
 						}
-						__m512 pixels = _mm512_load_ps(tempPixels);
 						__m512 filterVal = _mm512_set1_ps(kernel[di + 1][dj + 1]);
 						sum = _mm512_fmadd_ps(pixels, filterVal, sum);
 					}
-					// sum += kernel[di + 1][dj + 1] * img[ni * num_cols + nj];
 				}
 			}
-			float result[16];
-			_mm512_store_ps(result, sum);
-			sol_fs.write(reinterpret_cast<const char *>(result), sizeof(result));
+			_mm512_store_ps(&result[i * num_cols + j], sum);
 		}
+		sol_fs.write(reinterpret_cast<const char *>(result), sizeof(float) * num_rows * num_cols);
 
 		// std::cout << std::endl;
 		// std::cout << "correct" << std::endl;
