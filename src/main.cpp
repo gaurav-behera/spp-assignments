@@ -37,11 +37,11 @@ namespace solution
 		bitmap_fs.read(reinterpret_cast<char *>(img), sizeof(float) * num_rows * num_cols);
 		bitmap_fs.close();
 
-		omp_set_nested(1); 
+		omp_set_nested(1);
 #pragma omp parallel num_threads(48)
 		{
 			int thread_id = omp_get_thread_num();
-			int node_id = thread_id / 28; 
+			int node_id = thread_id / 28;
 			int cpu_id = thread_id % 28;
 
 			cpu_set_t cpu_set;
@@ -55,24 +55,32 @@ namespace solution
 				for (int j = 0; j < num_cols; j += 16)
 				{
 					__m512 sum = _mm512_setzero_ps();
+					__m512 pixels, filterVal;
 					for (int di = -1; di <= 1; di++)
 					{
-						for (int dj = -1; dj <= 1; dj++)
+						int ni = i + di;
+						if (ni >= 0 && ni < num_rows)
 						{
-							int ni = i + di, nj = j + dj;
-
-							if (ni >= 0 && ni < num_rows)
+							__mmask16 mask1 = 0xFFFF, mask2 = 0xFFFF, mask3 = 0xFFFF;
+							if (j - 1 < 0)
 							{
-								__mmask16 mask = 0xFFFF;
-								if (nj < 0)
-									mask &= 0xFFFE;
-								if (nj + 15 >= num_cols)
-									mask &= 0x7FFF;
-
-								__m512 pixels = _mm512_mask_loadu_ps(_mm512_setzero_ps(), mask, &img[ni * num_cols + nj]);
-								__m512 filterVal = _mm512_set1_ps(kernel[di + 1][dj + 1]);
-								sum = _mm512_fmadd_ps(pixels, filterVal, sum);
+								mask1 &= 0xFFFE;
 							}
+							if (j + 16 >= num_cols)
+							{
+								mask3 &= 0x7FFF;
+							}
+							pixels = _mm512_mask_loadu_ps(_mm512_setzero_ps(), mask1, &img[ni * num_cols + j - 1]);
+							filterVal = _mm512_set1_ps(kernel[di + 1][0]);
+							sum = _mm512_fmadd_ps(pixels, filterVal, sum);
+
+							pixels = _mm512_mask_loadu_ps(_mm512_setzero_ps(), mask2, &img[ni * num_cols + j]);
+							filterVal = _mm512_set1_ps(kernel[di + 1][1]);
+							sum = _mm512_fmadd_ps(pixels, filterVal, sum);
+
+							pixels = _mm512_mask_loadu_ps(_mm512_setzero_ps(), mask3, &img[ni * num_cols + j + 1]);
+							filterVal = _mm512_set1_ps(kernel[di + 1][2]);
+							sum = _mm512_fmadd_ps(pixels, filterVal, sum);
 						}
 					}
 					_mm512_storeu_ps(&result[i * num_cols + j], sum);
