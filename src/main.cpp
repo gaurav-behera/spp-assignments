@@ -69,9 +69,9 @@ namespace solution
 
 							for (int k = 0; k < 3; ++k)
 							{
-								pixels[k] = _mm512_mask_loadu_ps(_mm512_setzero_ps(), mask[k], &img[ni * num_cols + j + k - 1]);
-								filterVal[k] = _mm512_set1_ps(kernel[di + 1][k]);
-								sum = _mm512_fmadd_ps(pixels[k], filterVal[k], sum);
+								pixels = _mm512_mask_loadu_ps(_mm512_setzero_ps(), mask[k], &img[ni * num_cols + j + k - 1]);
+								filterVal = _mm512_set1_ps(kernel[di + 1][k]);
+								sum = _mm512_fmadd_ps(pixels, filterVal, sum);
 							}
 						}
 					}
