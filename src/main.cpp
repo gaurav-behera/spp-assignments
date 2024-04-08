@@ -67,7 +67,7 @@ namespace solution
 							}
 						}
 					}
-					_mm512_storeu_ps(&result[j], sum);
+					_mm512_store_ps(&result[j], sum);
 				}
 				sol_fs.write(reinterpret_cast<const char *>(result), sizeof(float) * num_cols);
 			// }
