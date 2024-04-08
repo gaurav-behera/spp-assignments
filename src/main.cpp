@@ -37,7 +37,7 @@ namespace solution
 		bitmap_fs.read(reinterpret_cast<char *>(img), sizeof(float) * num_rows * num_cols);
 		bitmap_fs.close();
 
-#pragma omp parallel num_threads(48)
+#pragma omp parallel num_threads(32)
 		{
 			int thread_id = omp_get_thread_num();
 			int numa_node_id = thread_id % 2;
@@ -54,11 +54,10 @@ namespace solution
 
 			sched_setaffinity(0, sizeof(cpu_set_t), &cpu_set);
 
-			int chunk_size = (num_rows + 47) / 48; // Ceiling division
+			int chunk_size = 1024;
 			int start_row = thread_id * chunk_size;
-			int end_row = std::min((thread_id + 1) * chunk_size, num_rows);
+			int end_row = start_row * chunk_size;
 
-			// Compute convolution
 			for (int i = start_row; i < end_row; ++i)
 			{
 				for (int j = 0; j < num_cols; j += 16)
