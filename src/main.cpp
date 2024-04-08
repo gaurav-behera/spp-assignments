@@ -37,11 +37,9 @@ namespace solution
 		bitmap_fs.read(reinterpret_cast<char *>(img), sizeof(float) * num_rows * num_cols);
 		bitmap_fs.close();
 
-		// omp_set_num_threads(4);
-
+		#pragma omp parallel for collapse(2)
 		for (int i = 0; i < num_rows; ++i)
 		{
-			// #pragma omp parallel for schedule(dynamic)
 			for (int j = 0; j < num_cols; j += 16)
 			{
 				__m512 sum = _mm512_setzero_ps();
@@ -68,6 +66,7 @@ namespace solution
 				_mm512_storeu_ps(&result[i * num_cols + j], sum);
 			}
 		}
+		
 		sol_fs.write(reinterpret_cast<const char *>(result), sizeof(float) * num_rows * num_cols);
 		sol_fs.close();
 		free(result);
