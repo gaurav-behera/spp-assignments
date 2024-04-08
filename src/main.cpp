@@ -37,6 +37,7 @@ namespace solution
 		bitmap_fs.read(reinterpret_cast<char *>(img), sizeof(float) * num_rows * num_cols);
 		bitmap_fs.close();
 
+		omp_set_num_threads(24);
 		#pragma omp parallel for collapse(2)
 		for (int i = 0; i < num_rows; ++i)
 		{
