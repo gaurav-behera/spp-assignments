@@ -25,7 +25,7 @@ namespace solution
 		float *img = static_cast<float *>(aligned_img_ptr);
 
 		void *aligned_result;
-		if (posix_memalign(&aligned_result, 64, sizeof(float) * 16) != 0)
+		if (posix_memalign(&aligned_result, 64, sizeof(float) * num_cols) != 0)
 		{
 			throw std::bad_alloc();
 		}
@@ -34,9 +34,9 @@ namespace solution
 		bitmap_fs.read(reinterpret_cast<char *>(img), sizeof(float) * num_rows * num_cols);
 		bitmap_fs.close();
 
-#pragma omp parallel for collapse(2) shared(img, result, sol_fs)
 		for (int i = 0; i < num_rows; ++i)
 		{
+#pragma omp parallel for
 			for (int j = 0; j < num_cols; j += 16)
 			{
 				__m512 sum = _mm512_setzero_ps();
@@ -64,13 +64,11 @@ namespace solution
 						}
 					}
 				}
-				_mm512_store_ps(result, sum);
-				#pragma omp critical
-                {
-                    sol_fs.write(reinterpret_cast<const char *>(result), sizeof(float) * 16);
-                }
+				_mm512_store_ps(&result[j * 16], sum);
+				// int thread_id = omp_get_thread_num();
 				// sol_fs.write(reinterpret_cast<const char *>(result), sizeof(float) * 16);
 			}
+			sol_fs.write(reinterpret_cast<const char *>(result), sizeof(float) * num_cols);
 		}
 		sol_fs.close();
 		free(result);
