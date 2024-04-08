@@ -37,7 +37,7 @@ namespace solution
 		bitmap_fs.read(reinterpret_cast<char *>(img), sizeof(float) * num_rows * num_cols);
 		bitmap_fs.close();
 
-		omp_set_num_threads(4);
+		// omp_set_num_threads(4);
 
 		for (int i = 0; i < num_rows; ++i)
 		{
