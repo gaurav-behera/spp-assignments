@@ -40,11 +40,11 @@ namespace solution
 #pragma omp parallel num_threads(48)
 		{
 			int thread_id = omp_get_thread_num();
-			int numa_node_id = thread_id % 2; 
+			int numa_node_id = thread_id % 2;
 
 			int cpu_id_within_node;
 			if (numa_node_id == 0)
-				cpu_id_within_node = thread_id / 2; 
+				cpu_id_within_node = thread_id / 2;
 			else
 				cpu_id_within_node = thread_id / 2 + 1;
 
@@ -54,8 +54,12 @@ namespace solution
 
 			sched_setaffinity(0, sizeof(cpu_set_t), &cpu_set);
 
-#pragma omp for schedule(dynamic)
-			for (int i = 0; i < num_rows; ++i)
+			int chunk_size = (num_rows + 47) / 48; // Ceiling division
+			int start_row = thread_id * chunk_size;
+			int end_row = std::min((thread_id + 1) * chunk_size, num_rows);
+
+			// Compute convolution
+			for (int i = start_row; i < end_row; ++i)
 			{
 				for (int j = 0; j < num_cols; j += 16)
 				{
