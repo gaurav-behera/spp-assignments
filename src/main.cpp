@@ -37,7 +37,6 @@ namespace solution
 		bitmap_fs.read(reinterpret_cast<char *>(img), sizeof(float) * num_rows * num_cols);
 		bitmap_fs.close();
 
-		omp_set_nested(1);
 #pragma omp parallel num_threads(48)
 		{
 			int thread_id = omp_get_thread_num();
@@ -55,7 +54,7 @@ namespace solution
 
 			sched_setaffinity(0, sizeof(cpu_set_t), &cpu_set);
 
-#pragma omp for collapse(2)
+#pragma omp for schedule(dynamic)
 			for (int i = 0; i < num_rows; ++i)
 			{
 				for (int j = 0; j < num_cols; j += 16)
