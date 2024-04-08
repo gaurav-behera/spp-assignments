@@ -8,6 +8,7 @@
 #include <immintrin.h>
 #include <string>
 #include <vector>
+#include <numa.h>
 #include <omp.h>
 
 namespace solution
@@ -37,14 +38,18 @@ namespace solution
 		bitmap_fs.read(reinterpret_cast<char *>(img), sizeof(float) * num_rows * num_cols);
 		bitmap_fs.close();
 
-		omp_set_num_threads(24);
+		omp_set_num_threads(8);
 
 		for (int i = 0; i < num_rows; ++i)
 		{
 
-#pragma omp parallel proc_bind(spread)
+#pragma omp parallel
 			{
-				#pragma omp for schedule(dynamic)
+				int tid = omp_get_thread_num();
+				int numa_node = tid % 2;
+				numa_run_on_node(numa_node);
+
+#pragma omp for schedule(dynamic)
 				for (int j = 0; j < num_cols; j += 16)
 				{
 					__m512 sum = _mm512_setzero_ps();
