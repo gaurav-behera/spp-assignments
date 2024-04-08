@@ -26,7 +26,7 @@ namespace solution
 		float *img = static_cast<float *>(aligned_img_ptr);
 
 		void *aligned_result;
-		if (posix_memalign(&aligned_result, 32, sizeof(float) * num_cols) != 0)
+		if (posix_memalign(&aligned_result, 16, sizeof(float) * num_cols) != 0)
 		{
 			throw std::bad_alloc();
 		}
