@@ -7,9 +7,4 @@ if(OpenMP_CXX_FOUND)
     target_link_libraries(studentlib PRIVATE OpenMP::OpenMP_CXX)
 endif()
 
-find_library(NUMA_LIBRARY numa)
-if(NUMA_LIBRARY)
-    target_link_libraries(studentlib PRIVATE ${NUMA_LIBRARY})
-endif()
-
 target_compile_options(studentlib PRIVATE -Ofast -march=native -fopenmp) 

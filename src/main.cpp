@@ -8,7 +8,6 @@
 #include <immintrin.h>
 #include <string>
 #include <vector>
-#include <numa.h>
 #include <omp.h>
 
 namespace solution
@@ -27,61 +26,53 @@ namespace solution
 			throw std::bad_alloc();
 		}
 		float *img = static_cast<float *>(aligned_img_ptr);
-		numa_tonode_memory(img, sizeof(float) * num_rows * num_cols, 0);
 
 		void *aligned_result;
-		if (posix_memalign(&aligned_result, 64, sizeof(float) * num_cols) != 0)
+		if (posix_memalign(&aligned_result, 64, sizeof(float) * num_rows * num_cols) != 0)
 		{
 			throw std::bad_alloc();
 		}
 		float *result = static_cast<float *>(aligned_result);
-		numa_tonode_memory(result, sizeof(float) * num_cols, 0);
 
 		bitmap_fs.read(reinterpret_cast<char *>(img), sizeof(float) * num_rows * num_cols);
 		bitmap_fs.close();
 
-		omp_set_num_threads(4);
+		// omp_set_num_threads(4);
 
 		for (int i = 0; i < num_rows; ++i)
 		{
-
-#pragma omp parallel
+			// #pragma omp parallel for schedule(dynamic)
+			for (int j = 0; j < num_cols; j += 16)
 			{
-				numa_run_on_node(0);
-
-#pragma omp for schedule(dynamic)
-				for (int j = 0; j < num_cols; j += 16)
+				__m512 sum = _mm512_setzero_ps();
+				for (int di = -1; di <= 1; di++)
 				{
-					__m512 sum = _mm512_setzero_ps();
-					for (int di = -1; di <= 1; di++)
+					for (int dj = -1; dj <= 1; dj++)
 					{
-						for (int dj = -1; dj <= 1; dj++)
+						int ni = i + di, nj = j + dj;
+
+						if (ni >= 0 && ni < num_rows)
 						{
-							int ni = i + di, nj = j + dj;
+							__mmask16 mask = 0xFFFF;
+							if (nj < 0)
+								mask &= 0xFFFE;
+							if (nj + 15 >= num_cols)
+								mask &= 0x7FFF;
 
-							if (ni >= 0 && ni < num_rows)
-							{
-								__mmask16 mask = 0xFFFF;
-								if (nj < 0)
-									mask &= 0xFFFE;
-								if (nj + 15 >= num_cols)
-									mask &= 0x7FFF;
-
-								__m512 pixels = _mm512_mask_loadu_ps(_mm512_setzero_ps(), mask, &img[ni * num_cols + nj]);
-								__m512 filterVal = _mm512_set1_ps(kernel[di + 1][dj + 1]);
-								sum = _mm512_fmadd_ps(pixels, filterVal, sum);
-							}
+							__m512 pixels = _mm512_mask_loadu_ps(_mm512_setzero_ps(), mask, &img[ni * num_cols + nj]);
+							__m512 filterVal = _mm512_set1_ps(kernel[di + 1][dj + 1]);
+							sum = _mm512_fmadd_ps(pixels, filterVal, sum);
 						}
 					}
-					_mm512_storeu_ps(&result[j], sum);
 				}
+				_mm512_storeu_ps(&result[i * num_cols + j], sum);
 			}
-			sol_fs.write(reinterpret_cast<const char *>(result), sizeof(float) * num_cols);
 		}
+		sol_fs.write(reinterpret_cast<const char *>(result), sizeof(float) * num_rows * num_cols);
 		sol_fs.close();
 		free(result);
 		free(img);
 
 		return sol_path;
 	}
-};
+}
