@@ -61,26 +61,18 @@ namespace solution
 						int ni = i + di;
 						if (ni >= 0 && ni < num_rows)
 						{
-							__mmask16 mask1 = 0xFFFF, mask2 = 0xFFFF, mask3 = 0xFFFF;
+							__mmask16 mask[3] = {0xFFFF, 0xFFFF, 0xFFFF};
 							if (j - 1 < 0)
-							{
-								mask1 &= 0xFFFE;
-							}
+								mask[0] &= 0xFFFE;
 							if (j + 16 >= num_cols)
+								mask[2] &= 0x7FFF;
+
+							for (int k = 0; k < 3; ++k)
 							{
-								mask3 &= 0x7FFF;
+								pixels[k] = _mm512_mask_loadu_ps(_mm512_setzero_ps(), mask[k], &img[ni * num_cols + j + k - 1]);
+								filterVal[k] = _mm512_set1_ps(kernel[di + 1][k]);
+								sum = _mm512_fmadd_ps(pixels[k], filterVal[k], sum);
 							}
-							pixels = _mm512_mask_loadu_ps(_mm512_setzero_ps(), mask1, &img[ni * num_cols + j - 1]);
-							filterVal = _mm512_set1_ps(kernel[di + 1][0]);
-							sum = _mm512_fmadd_ps(pixels, filterVal, sum);
-
-							pixels = _mm512_mask_loadu_ps(_mm512_setzero_ps(), mask2, &img[ni * num_cols + j]);
-							filterVal = _mm512_set1_ps(kernel[di + 1][1]);
-							sum = _mm512_fmadd_ps(pixels, filterVal, sum);
-
-							pixels = _mm512_mask_loadu_ps(_mm512_setzero_ps(), mask3, &img[ni * num_cols + j + 1]);
-							filterVal = _mm512_set1_ps(kernel[di + 1][2]);
-							sum = _mm512_fmadd_ps(pixels, filterVal, sum);
 						}
 					}
 					_mm512_storeu_ps(&result[i * num_cols + j], sum);
