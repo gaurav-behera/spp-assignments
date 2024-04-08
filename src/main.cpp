@@ -37,49 +37,47 @@ namespace solution
 		bitmap_fs.read(reinterpret_cast<char *>(img), sizeof(float) * num_rows * num_cols);
 		bitmap_fs.close();
 
-		omp_set_num_threads(32);
+		omp_set_num_threads(4);
 
 		for (int i = 0; i < num_rows; ++i)
 		{
-			#pragma omp parallel for
-			for (int j = 0; j < num_cols; j += 16)
+			for (int _c = 0; _c < num_cols; _c += chunk_size)
 			{
-				__m512 sum = _mm512_setzero_ps();
-				for (int di = -1; di <= 1; di++)
+#pragma omp parallel for
+				for (int j = _c; j < _c + chunk_size; j += 16)
 				{
-					for (int dj = -1; dj <= 1; dj++)
+					__m512 sum = _mm512_setzero_ps();
+					for (int di = -1; di <= 1; di++)
 					{
-						int ni = i + di, nj = j + dj;
-
-						if (ni >= 0 && ni < num_rows)
+						for (int dj = -1; dj <= 1; dj++)
 						{
-							__mmask16 mask = 0xFFFF;
-							if (nj < 0)
-								mask &= 0xFFFE;
-							if (nj + 15 >= num_cols)
-								mask &= 0x7FFF;
+							int ni = i + di, nj = j + dj;
 
-							__m512 pixels = _mm512_mask_loadu_ps(_mm512_setzero_ps(), mask, &img[ni * num_cols + nj]);
-							__m512 filterVal = _mm512_set1_ps(kernel[di + 1][dj + 1]);
-							sum = _mm512_fmadd_ps(pixels, filterVal, sum);
+							if (ni >= 0 && ni < num_rows)
+							{
+								__mmask16 mask = 0xFFFF;
+								if (nj < 0)
+									mask &= 0xFFFE;
+								if (nj + 15 >= num_cols)
+									mask &= 0x7FFF;
+
+								__m512 pixels = _mm512_mask_loadu_ps(_mm512_setzero_ps(), mask, &img[ni * num_cols + nj]);
+								__m512 filterVal = _mm512_set1_ps(kernel[di + 1][dj + 1]);
+								sum = _mm512_fmadd_ps(pixels, filterVal, sum);
+							}
 						}
 					}
+					_mm512_storeu_ps(&result[j - _c], sum);
 				}
-				_mm512_storeu_ps(&result[j % chunk_size], sum);
-				if (j % chunk_size == chunk_size-16)
-				{
-					sol_fs.write(reinterpret_cast<const char *>(result), sizeof(float) * chunk_size);
-				}
-
-				// _mm512_store_ps(result, sum);
-				// sol_fs.write(reinterpret_cast<const char *>(result), sizeof(float) * 16);
+				sol_fs.write(reinterpret_cast<const char *>(result), sizeof(float) * chunk_size);
 			}
-
 			// sol_fs.write(reinterpret_cast<const char *>(result), sizeof(float) * num_cols);
 		}
 		sol_fs.close();
 		free(result);
 		free(img);
+
+
 		return sol_path;
 	}
 };
