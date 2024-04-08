@@ -41,12 +41,18 @@ namespace solution
 #pragma omp parallel num_threads(48)
 		{
 			int thread_id = omp_get_thread_num();
-			int node_id = thread_id / 28;
-			int cpu_id = thread_id % 28;
+			int numa_node_id = thread_id % 2; 
+
+			int cpu_id_within_node;
+			if (numa_node_id == 0)
+				cpu_id_within_node = thread_id / 2; 
+			else
+				cpu_id_within_node = thread_id / 2 + 1;
 
 			cpu_set_t cpu_set;
 			CPU_ZERO(&cpu_set);
-			CPU_SET(cpu_id, &cpu_set);
+			CPU_SET(cpu_id_within_node, &cpu_set);
+
 			sched_setaffinity(0, sizeof(cpu_set_t), &cpu_set);
 
 #pragma omp for collapse(2)
