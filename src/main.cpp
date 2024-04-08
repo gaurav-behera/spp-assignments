@@ -14,6 +14,8 @@ namespace solution
 {
 	std::string compute(const std::string &bitmap_path, const float kernel[3][3], const std::int32_t num_rows, const std::int32_t num_cols)
 	{
+		int chunk_size = 256;
+
 		std::string sol_path = std::filesystem::temp_directory_path() / "student_sol.bmp";
 		std::ofstream sol_fs(sol_path, std::ios::binary);
 		std::ifstream bitmap_fs(bitmap_path, std::ios::binary);
@@ -26,7 +28,7 @@ namespace solution
 		float *img = static_cast<float *>(aligned_img_ptr);
 
 		void *aligned_result;
-		if (posix_memalign(&aligned_result, 64, sizeof(float) * num_cols) != 0)
+		if (posix_memalign(&aligned_result, 64, sizeof(float) * chunk_size) != 0)
 		{
 			throw std::bad_alloc();
 		}
@@ -35,9 +37,10 @@ namespace solution
 		bitmap_fs.read(reinterpret_cast<char *>(img), sizeof(float) * num_rows * num_cols);
 		bitmap_fs.close();
 
+		omp_set_num_threads(32);
+
 		for (int i = 0; i < num_rows; ++i)
 		{
-#pragma omp parallel for
 			for (int j = 0; j < num_cols; j += 16)
 			{
 				__m512 sum = _mm512_setzero_ps();
@@ -51,25 +54,27 @@ namespace solution
 						{
 							__mmask16 mask = 0xFFFF;
 							if (nj < 0)
-							{
 								mask &= 0xFFFE;
-							}
 							if (nj + 15 >= num_cols)
-							{
 								mask &= 0x7FFF;
-							}
-							__m512 pixels = _mm512_mask_loadu_ps(_mm512_setzero_ps(), mask, &img[ni * num_cols + nj]);
 
+							__m512 pixels = _mm512_mask_loadu_ps(_mm512_setzero_ps(), mask, &img[ni * num_cols + nj]);
 							__m512 filterVal = _mm512_set1_ps(kernel[di + 1][dj + 1]);
 							sum = _mm512_fmadd_ps(pixels, filterVal, sum);
 						}
 					}
 				}
-				_mm512_storeu_ps(&result[j], sum);
+				_mm512_storeu_ps(&result[j % chunk_size], sum);
+				if (j % chunk_size == chunk_size-16)
+				{
+					sol_fs.write(reinterpret_cast<const char *>(result), sizeof(float) * chunk_size);
+				}
+
 				// _mm512_store_ps(result, sum);
 				// sol_fs.write(reinterpret_cast<const char *>(result), sizeof(float) * 16);
 			}
-			sol_fs.write(reinterpret_cast<const char *>(result), sizeof(float) * num_cols);
+
+			// sol_fs.write(reinterpret_cast<const char *>(result), sizeof(float) * num_cols);
 		}
 		sol_fs.close();
 		free(result);
