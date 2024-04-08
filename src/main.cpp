@@ -7,6 +7,7 @@
 #include <filesystem>
 #include <immintrin.h>
 #include <string>
+#include <vector>
 #include <omp.h>
 
 namespace solution
@@ -25,7 +26,7 @@ namespace solution
 		float *img = static_cast<float *>(aligned_img_ptr);
 
 		void *aligned_result;
-		if (posix_memalign(&aligned_result, 64, sizeof(float) * num_cols) != 0)
+		if (posix_memalign(&aligned_result, 32, sizeof(float) * num_cols) != 0)
 		{
 			throw std::bad_alloc();
 		}
@@ -64,8 +65,8 @@ namespace solution
 						}
 					}
 				}
-				_mm512_store_ps(&result[j * 16], sum);
-				// int thread_id = omp_get_thread_num();
+				_mm512_store_ps(&result[j], sum);
+				// _mm512_store_ps(result, sum);
 				// sol_fs.write(reinterpret_cast<const char *>(result), sizeof(float) * 16);
 			}
 			sol_fs.write(reinterpret_cast<const char *>(result), sizeof(float) * num_cols);
