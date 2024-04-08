@@ -41,6 +41,7 @@ namespace solution
 
 		for (int i = 0; i < num_rows; ++i)
 		{
+			#pragma omp parallel for
 			for (int j = 0; j < num_cols; j += 16)
 			{
 				__m512 sum = _mm512_setzero_ps();
