@@ -14,7 +14,7 @@ namespace solution
 {
 	std::string compute(const std::string &bitmap_path, const float kernel[3][3], const std::int32_t num_rows, const std::int32_t num_cols)
 	{
-		int chunk_size = 16384;
+		int chunk_size = 32768;
 
 		std::string sol_path = std::filesystem::temp_directory_path() / "student_sol.bmp";
 		std::ofstream sol_fs(sol_path, std::ios::binary);
