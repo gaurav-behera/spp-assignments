@@ -14,7 +14,7 @@ namespace solution
 {
 	std::string compute(const std::string &bitmap_path, const float kernel[3][3], const std::int32_t num_rows, const std::int32_t num_cols)
 	{
-		int chunk_size = 32768;
+		// int chunk_size = 32768;
 
 		std::string sol_path = std::filesystem::temp_directory_path() / "student_sol.bmp";
 		std::ofstream sol_fs(sol_path, std::ios::binary);
@@ -28,7 +28,7 @@ namespace solution
 		float *img = static_cast<float *>(aligned_img_ptr);
 
 		void *aligned_result;
-		if (posix_memalign(&aligned_result, 64, sizeof(float) * chunk_size) != 0)
+		if (posix_memalign(&aligned_result, 64, sizeof(float) * num_cols) != 0)
 		{
 			throw std::bad_alloc();
 		}
@@ -41,10 +41,10 @@ namespace solution
 
 		for (int i = 0; i < num_rows; ++i)
 		{
-			for (int _c = 0; _c < num_cols; _c += chunk_size)
-			{
+			// for (int _c = 0; _c < num_cols; _c += chunk_size)
+			// {
 #pragma omp parallel for
-				for (int j = _c; j < _c + chunk_size; j += 16)
+				for (int j = 0; j < num_cols; j += 16)
 				{
 					__m512 sum = _mm512_setzero_ps();
 					for (int di = -1; di <= 1; di++)
@@ -67,10 +67,10 @@ namespace solution
 							}
 						}
 					}
-					_mm512_storeu_ps(&result[j - _c], sum);
+					_mm512_storeu_ps(&result[j], sum);
 				}
 				sol_fs.write(reinterpret_cast<const char *>(result), sizeof(float) * chunk_size);
-			}
+			// }
 			// sol_fs.write(reinterpret_cast<const char *>(result), sizeof(float) * num_cols);
 		}
 		sol_fs.close();
