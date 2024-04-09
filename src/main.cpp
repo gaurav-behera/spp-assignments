@@ -1,5 +1,6 @@
 #pragma GCC optimize("O3,unroll-loops")
 // #pragma GCC target("avx2,bmi,bmi2,lzcnt,popcnt")
+#pragma GCC target("avx2,bmi,bmi2,lzcnt,popcnt,avx512f")
 #include <iostream>
 #include <fstream>
 #include <memory>
@@ -42,15 +43,18 @@ namespace solution
 					{
 						int ni = i + di, nj = j + dj;
 
-						__mmask16 mask = (ni >= 0 && ni < num_rows) ? 0xFFFF : 0x0000;
-						if (nj < 0)
-							mask &= 0xFFFE;
-						if (nj + 15 >= num_cols)
-							mask &= 0x7FFF;
+						if (ni >= 0 && ni < num_rows)
+						{
+							__mmask16 mask = 0xFFFF;
+							if (nj < 0)
+								mask &= 0xFFFE;
+							if (nj + 15 >= num_cols)
+								mask &= 0x7FFF;
 
-						__m512 pixels = _mm512_mask_loadu_ps(_mm512_setzero_ps(), mask, &img[ni * num_cols + nj]);
-						__m512 filterVal = _mm512_set1_ps(kernel[di + 1][dj + 1]);
-						sum = _mm512_fmadd_ps(pixels, filterVal, sum);
+							__m512 pixels = _mm512_mask_loadu_ps(_mm512_setzero_ps(), mask, &img[ni * num_cols + nj]);
+							__m512 filterVal = _mm512_set1_ps(kernel[di + 1][dj + 1]);
+							sum = _mm512_fmadd_ps(pixels, filterVal, sum);
+						}
 					}
 				}
 				_mm512_storeu_ps(&result[k], sum);
