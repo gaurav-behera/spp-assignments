@@ -46,7 +46,7 @@ namespace solution
 		// void *mapped_result = mmap(NULL, sizeof(float) * num_rows * num_cols, PROT_WRITE | PROT_READ, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 		// float *result = static_cast<float *>(mapped_result);
 
-		const float* img = reinterpret_cast<float*>(mmap(nullptr, num_rows * num_cols * sizeof(float), PROT_READ, MAP_PRIVATE, bitmap_fd, 0));
+		const auto img = reinterpret_cast<float*>(mmap(nullptr, num_rows * num_cols * sizeof(float), PROT_READ, MAP_PRIVATE, bitmap_fd, 0));
 		// float* result = reinterpret_cast<float*>(mmap(nullptr, num_rows * num_cols * sizeof(float), PROT_WRITE, MAP_PRIVATE, -1, 0));
 
 
@@ -262,8 +262,9 @@ namespace solution
 		}
 		sol_fs.write(reinterpret_cast<const char *>(result), sizeof(float) * num_rows * num_cols);
 		sol_fs.close();
-		munmap(mapped_img, sizeof(float) * num_rows * num_cols);
-		munmap(mapped_result, sizeof(float) * num_rows * num_cols);
+		// munmap(mapped_img, sizeof(float) * num_rows * num_cols);
+		// munmap(mapped_result, sizeof(float) * num_rows * num_cols);
+		free(result);
 		return sol_path;
 	}
 }
