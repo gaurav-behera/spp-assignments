@@ -94,7 +94,7 @@ namespace solution
 			// #pragma omp task
 			{
 				int i = 0;
-#pragma omp parallel for num_threads(4) schedule(dynamic)
+#pragma omp for
 				for (int j = 16; j < num_cols - 16; j++)
 				{
 					__m512 sum = _mm512_setzero_ps();
@@ -114,7 +114,7 @@ namespace solution
 			// #pragma omp task
 			{
 				int i = num_rows - 1;
-#pragma omp parallel for num_threads(4) schedule(dynamic)
+#pragma omp for
 				for (int j = 16; j < num_cols - 16; j++)
 				{
 					__m512 sum = _mm512_setzero_ps();
@@ -134,7 +134,7 @@ namespace solution
 			// #pragma omp task
 			{
 				int j = 0;
-#pragma omp parallel for num_threads(4) schedule(dynamic)
+#pragma omp for
 				for (int i = 1; i < num_rows - 1; i++)
 				{
 					__m512 sum = _mm512_setzero_ps();
@@ -159,7 +159,7 @@ namespace solution
 			// #pragma omp task
 			{
 				int j = num_cols - 16;
-#pragma omp parallel for num_threads(4) schedule(dynamic)
+#pragma omp for
 				for (int i = 1; i < num_rows - 1; i++)
 				{
 					__m512 sum = _mm512_setzero_ps();
