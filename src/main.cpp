@@ -269,7 +269,6 @@ omp_set_num_threads(4);
 		sol_fs.close();
 		munmap(mapped_img, sizeof(float) * num_rows * num_cols);
         munmap(mapped_result, sizeof(float) * num_rows * num_cols);
-        close(bitmap_fd);
 		return sol_path;
 	}
 }
