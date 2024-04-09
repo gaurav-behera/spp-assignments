@@ -21,46 +21,13 @@ namespace solution
 		std::string sol_path = "student_sol.bmp";
 
 		int bitmap_fd = open(bitmap_path.c_str(), O_RDONLY);
-		if (bitmap_fd == -1)
-		{
-			std::cerr << "Failed to open bitmap file: " << std::endl;
-			return "";
-		}
 
-		void *mapped_img = mmap(NULL, sizeof(float) * num_rows * num_cols, PROT_READ, MAP_PRIVATE, bitmap_fd, 0);
-		if (mapped_img == MAP_FAILED)
-		{
-			std::cerr << "Failed to mmap bitmap file: " << std::endl;
-			close(bitmap_fd);
-			return "";
-		}
+		void *img = static_cast<float *>(mmap(NULL, sizeof(float) * num_rows * num_cols, PROT_READ, MAP_PRIVATE, bitmap_fd, 0));
 		float *img = static_cast<float *>(mapped_img);
 
 		int result_fd = open(sol_path.c_str(), O_CREAT | O_RDWR);
-		if (result_fd == -1)
-		{
-			std::cerr << "Failed to open result file: " << std::endl;
-			munmap(mapped_img, sizeof(float) * num_rows * num_cols);
-			close(bitmap_fd);
-			return "";
-		}
-		if (ftruncate(result_fd, sizeof(float) * num_rows * num_cols) == -1)
-		{
-			std::cerr << "Failed to set file size: " << std::endl;
-			close(result_fd);
-			return "";
-		}
-
+		ftruncate(result_fd, sizeof(float) * num_rows * num_cols);
 		float *result = reinterpret_cast<float *>(mmap(NULL, sizeof(float) * num_rows * num_cols, PROT_WRITE | PROT_READ, MAP_SHARED, result_fd, 0));
-		if (result == MAP_FAILED)
-		{
-			// std::cerr << "Failed to mmap result file: " << std::endl;
-			std::cerr << "Failed to mmap result file: " << strerror(errno) << std::endl;
-			munmap(mapped_img, sizeof(float) * num_rows * num_cols);
-			close(bitmap_fd);
-			close(result_fd);
-			return "";
-		}
 
 #pragma omp parallel
 #pragma omp single
