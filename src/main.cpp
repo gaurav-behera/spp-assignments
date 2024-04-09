@@ -28,9 +28,9 @@ namespace solution
 		ftruncate(result_fd, sizeof(float) * num_rows * num_cols);
 		float *result = reinterpret_cast<float *>(mmap(NULL, sizeof(float) * num_rows * num_cols, PROT_WRITE | PROT_READ, MAP_SHARED, result_fd, 0));
 
-#pragma omp parallel proc_bind(close) schedule(dynamic)
+#pragma omp parallel proc_bind(close) 
 		{
-#pragma omp for collapse(2)
+#pragma omp for collapse(2) schedule(dynamic)
 			for (int i = 0; i < num_rows; ++i)
 			{
 				for (int j = 0; j < num_cols; j += 16)
