@@ -40,12 +40,17 @@ namespace solution
 // omp_set_num_threads(24);
 #pragma omp parallel
 		{
+			int tid = omp_get_thread_num();
+            int cpu_id = numa_node_cpus[(tid % 24)*2];
+            cpu_set_t cpuset;
+            CPU_ZERO(&cpuset);
+            CPU_SET(cpu_id, &cpuset);
+            pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
 #pragma omp single nowait
 			{
 #pragma omp task
 				{
-					std::cout << "-3"
-							  << " " << omp_get_thread_num() << std::endl;
+					// std::cout << "-3" << omp_get_thread_num() << std::endl;
 
 					int i = 0;
 					for (int j = 16; j < num_cols - 16; j++)
@@ -66,8 +71,7 @@ namespace solution
 				}
 #pragma omp task
 				{
-					std::cout << "-2"
-							  << " " << omp_get_thread_num() << std::endl;
+					// std::cout << "-2" << omp_get_thread_num() << std::endl;
 
 					int i = num_rows - 1;
 					for (int j = 16; j < num_cols - 16; j++)
@@ -88,8 +92,7 @@ namespace solution
 				}
 #pragma omp task
 				{
-					std::cout << "-1"
-							  << " " << omp_get_thread_num() << std::endl;
+					// std::cout << "-1"<< omp_get_thread_num() << std::endl;
 
 					int j = 0;
 					for (int i = 1; i < num_rows - 1; i++)
@@ -115,8 +118,7 @@ namespace solution
 				}
 #pragma omp task
 				{
-					std::cout << "0"
-							  << " " << omp_get_thread_num() << std::endl;
+					// std::cout << "0" << omp_get_thread_num() << std::endl;
 
 					int j = num_cols - 16;
 					for (int i = 1; i < num_rows - 1; i++)
@@ -141,8 +143,7 @@ namespace solution
 				}
 #pragma omp task
 				{
-					std::cout << "1"
-							  << " " << omp_get_thread_num() << std::endl;
+					// std::cout << "1"<< omp_get_thread_num() << std::endl;
 
 					int i = 0, j = 0;
 					__m512 sum = _mm512_setzero_ps();
@@ -165,8 +166,7 @@ namespace solution
 				}
 #pragma omp task
 				{
-					std::cout << "2"
-							  << " " << omp_get_thread_num() << std::endl;
+					// std::cout << "2" << omp_get_thread_num() << std::endl;
 
 					int i = num_rows - 1, j = 0;
 					__m512 sum = _mm512_setzero_ps();
@@ -189,8 +189,7 @@ namespace solution
 				}
 #pragma omp task
 				{
-					std::cout << "3"
-							  << " " << omp_get_thread_num() << std::endl;
+					// std::cout << "3"<< omp_get_thread_num() << std::endl;
 					int i = 0, j = num_cols - 16;
 					__m512 sum = _mm512_setzero_ps();
 					for (int di = 0; di <= 1; di++)
@@ -211,8 +210,7 @@ namespace solution
 				}
 #pragma omp task
 				{
-					std::cout << "4"
-							  << " " << omp_get_thread_num() << std::endl;
+					// std::cout << "4"<< omp_get_thread_num() << std::endl;
 					int i = num_rows - 1, j = num_cols - 16;
 					__m512 sum = _mm512_setzero_ps();
 					for (int di = -1; di <= 0; di++)
@@ -251,7 +249,7 @@ namespace solution
 					_mm512_storeu_ps(&result[i * num_cols + j], sum);
 				}
 			}
-			std::cout << "done" << std::endl;
+			// std::cout << "done" << std::endl;
 		}
 
 		sol_fs.write(reinterpret_cast<const char *>(result), sizeof(float) * num_rows * num_cols);
