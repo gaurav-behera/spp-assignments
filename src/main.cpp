@@ -38,7 +38,9 @@ namespace solution
 
 		// mmap
 		int bitmap_fd = open(bitmap_path.c_str(), O_RDONLY);
-		const auto img = reinterpret_cast<float*>(mmap(nullptr, num_rows * num_cols * sizeof(float), PROT_READ, MAP_PRIVATE, bitmap_fd, 0));
+		void *mapped_img = mmap(NULL, sizeof(float) * num_rows * num_cols, PROT_READ, MAP_PRIVATE, bitmap_fd, 0);
+		float *img = static_cast<float *>(mapped_img);
+
 		read(bitmap_fd, img, num_rows * num_cols * sizeof(float));
 		close(bitmap_fd);
 
@@ -250,7 +252,7 @@ namespace solution
 		}
 		sol_fs.write(reinterpret_cast<const char *>(result), sizeof(float) * num_rows * num_cols);
 		sol_fs.close();
-		// munmap(mapped_img, sizeof(float) * num_rows * num_cols);
+		munmap(mapped_img, sizeof(float) * num_rows * num_cols);
 		// munmap(mapped_result, sizeof(float) * num_rows * num_cols);
 		free(result);
 		return sol_path;
