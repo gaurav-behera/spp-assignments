@@ -30,7 +30,7 @@ namespace solution
 
 #pragma omp parallel proc_bind(spread)
 		{
-#pragma omp for
+#pragma omp for schdule(dynamic, 16)
 			for (int k = 0; k < size; k+=16)
 			{
 				int i = k / num_cols, j = k % num_cols;
@@ -55,7 +55,7 @@ namespace solution
 						}
 					}
 				}
-				_mm512_storeu_ps(&result[i * (num_cols) + j], sum);
+				_mm512_storeu_ps(&result[k], sum);
 			}
 		}
 		return sol_path;
