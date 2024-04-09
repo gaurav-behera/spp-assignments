@@ -25,7 +25,7 @@ namespace solution
 		float *img = static_cast<float *>(mmap(NULL, sizeof(float) * size, PROT_READ, MAP_PRIVATE, bitmap_fd, 0));
 
 		int result_fd = open(sol_path.c_str(), O_CREAT | O_RDWR);
-		ftruncate(result_fd, sizeof(float) * size);
+		// ftruncate(result_fd, sizeof(float) * size);
 		float *result = reinterpret_cast<float *>(mmap(NULL, sizeof(float) * size, PROT_WRITE | PROT_READ, MAP_SHARED, result_fd, 0));
 
 #pragma omp parallel proc_bind(spread)
