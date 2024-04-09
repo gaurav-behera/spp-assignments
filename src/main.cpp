@@ -64,227 +64,230 @@ namespace solution
 			return "";
 		}
 
-#pragma omp parallel
+		for (int i = 0; i < num_rows; ++i)
 		{
-			// int tid = omp_get_thread_num();
-			// int num_threads = omp_get_num_threads();
-			// int node_cpus[] = {0, 1};	// CPU cores per NUMA node
-			// int num_cpus_per_node = 24; // Number of CPU cores per NUMA node
-			// int nodes = 2;				// Number of NUMA nodes
-
-			// // Calculate loop iteration range for each thread based on NUMA node
-			// int chunk_size = (num_rows - 2) / num_threads;
-			// int start_i = 1 + tid * chunk_size;
-			// int end_i = (tid == num_threads - 1) ? num_rows - 1 : start_i + chunk_size;
-
-			// int node_id = tid % nodes;
-
-			// #pragma omp critical
-			// 			{
-			// 				cpu_set_t cpuset;
-			// 				CPU_ZERO(&cpuset);
-			// 				for (int i = 0; i < num_cpus_per_node; i++)
-			// 				{
-			// 					CPU_SET(node_cpus[node_id] + i, &cpuset);
-			// 				}
-			// 				sched_setaffinity(0, sizeof(cpu_set_t), &cpuset);
-			// 			}
-			// #pragma omp single nowait
-			// {
-			// #pragma omp task
-			{
-				int i = 0;
-#pragma omp for
-				for (int j = 16; j < num_cols - 16; j++)
-				{
-					__m512 sum = _mm512_setzero_ps();
-					for (int di = 0; di <= 1; di++)
-					{
-						for (int dj = -1; dj <= 1; dj++)
-						{
-							int ni = i + di, nj = j + dj;
-							__m512 pixels = _mm512_loadu_ps(&img[ni * num_cols + nj]);
-							__m512 filterVal = _mm512_set1_ps(kernel[di + 1][dj + 1]);
-							sum = _mm512_fmadd_ps(pixels, filterVal, sum);
-						}
-					}
-					_mm512_storeu_ps(&result[j], sum);
-				}
-			}
-			// #pragma omp task
-			{
-				int i = num_rows - 1;
-#pragma omp for
-				for (int j = 16; j < num_cols - 16; j++)
-				{
-					__m512 sum = _mm512_setzero_ps();
-					for (int di = -1; di <= 0; di++)
-					{
-						for (int dj = -1; dj <= 1; dj++)
-						{
-							int ni = i + di, nj = j + dj;
-							__m512 pixels = _mm512_loadu_ps(&img[ni * num_cols + nj]);
-							__m512 filterVal = _mm512_set1_ps(kernel[di + 1][dj + 1]);
-							sum = _mm512_fmadd_ps(pixels, filterVal, sum);
-						}
-					}
-					_mm512_storeu_ps(&result[i * num_cols + j], sum);
-				}
-			}
-			// #pragma omp task
-			{
-				int j = 0;
-#pragma omp for
-				for (int i = 1; i < num_rows - 1; i++)
-				{
-					__m512 sum = _mm512_setzero_ps();
-					for (int di = -1; di <= 1; di++)
-					{
-						int dj = -1;
-						__m512 pixels = _mm512_mask_loadu_ps(_mm512_setzero_ps(), 0xFFFE, &img[(i + di) * num_cols + (j - 1)]);
-						__m512 filterVal = _mm512_set1_ps(kernel[di + 1][dj + 1]);
-						sum = _mm512_fmadd_ps(pixels, filterVal, sum);
-
-						for (int dj = 0; dj <= 1; dj++)
-						{
-							int ni = i + di, nj = j + dj;
-							__m512 pixels = _mm512_loadu_ps(&img[ni * num_cols + nj]);
-							__m512 filterVal = _mm512_set1_ps(kernel[di + 1][dj + 1]);
-							sum = _mm512_fmadd_ps(pixels, filterVal, sum);
-						}
-					}
-					_mm512_storeu_ps(&result[i * num_cols], sum);
-				}
-			}
-			// #pragma omp task
-			{
-				int j = num_cols - 16;
-#pragma omp for
-				for (int i = 1; i < num_rows - 1; i++)
-				{
-					__m512 sum = _mm512_setzero_ps();
-					for (int di = -1; di <= 1; di++)
-					{
-						for (int dj = -1; dj <= 0; dj++)
-						{
-							int ni = i + di, nj = j + dj;
-							__m512 pixels = _mm512_loadu_ps(&img[ni * num_cols + nj]);
-							__m512 filterVal = _mm512_set1_ps(kernel[di + 1][dj + 1]);
-							sum = _mm512_fmadd_ps(pixels, filterVal, sum);
-						}
-						int dj = 1;
-						__m512 pixels = _mm512_mask_loadu_ps(_mm512_setzero_ps(), 0x7FFF, &img[(i + di) * num_cols + (j + 1)]);
-						__m512 filterVal = _mm512_set1_ps(kernel[di + 1][dj + 1]);
-						sum = _mm512_fmadd_ps(pixels, filterVal, sum);
-					}
-					_mm512_storeu_ps(&result[i * num_cols + j], sum);
-				}
-			}
-#pragma omp single
-			{
-				int i = 0, j = 0;
-				__m512 sum = _mm512_setzero_ps();
-				for (int di = 0; di <= 1; di++)
-				{
-					int dj = -1;
-					__m512 pixels = _mm512_mask_loadu_ps(_mm512_setzero_ps(), 0xFFFE, &img[(i + di) * num_cols + (j - 1)]);
-					__m512 filterVal = _mm512_set1_ps(kernel[di + 1][dj + 1]);
-					sum = _mm512_fmadd_ps(pixels, filterVal, sum);
-
-					for (int dj = 0; dj <= 1; dj++)
-					{
-						int ni = i + di, nj = j + dj;
-						__m512 pixels = _mm512_loadu_ps(&img[ni * num_cols + nj]);
-						__m512 filterVal = _mm512_set1_ps(kernel[di + 1][dj + 1]);
-						sum = _mm512_fmadd_ps(pixels, filterVal, sum);
-					}
-				}
-				_mm512_storeu_ps(&result[i * num_cols], sum);
-			}
-#pragma omp single
-			{
-				int i = num_rows - 1, j = 0;
-				__m512 sum = _mm512_setzero_ps();
-				for (int di = -1; di <= 0; di++)
-				{
-					int dj = -1;
-					__m512 pixels = _mm512_mask_loadu_ps(_mm512_setzero_ps(), 0xFFFE, &img[(i + di) * num_cols + (j - 1)]);
-					__m512 filterVal = _mm512_set1_ps(kernel[di + 1][dj + 1]);
-					sum = _mm512_fmadd_ps(pixels, filterVal, sum);
-
-					for (int dj = 0; dj <= 1; dj++)
-					{
-						int ni = i + di, nj = j + dj;
-						__m512 pixels = _mm512_loadu_ps(&img[ni * num_cols + nj]);
-						__m512 filterVal = _mm512_set1_ps(kernel[di + 1][dj + 1]);
-						sum = _mm512_fmadd_ps(pixels, filterVal, sum);
-					}
-				}
-				_mm512_storeu_ps(&result[i * num_cols], sum);
-			}
-#pragma omp single
-			{
-				int i = 0, j = num_cols - 16;
-				__m512 sum = _mm512_setzero_ps();
-				for (int di = 0; di <= 1; di++)
-				{
-					for (int dj = -1; dj <= 0; dj++)
-					{
-						int ni = i + di, nj = j + dj;
-						__m512 pixels = _mm512_loadu_ps(&img[ni * num_cols + nj]);
-						__m512 filterVal = _mm512_set1_ps(kernel[di + 1][dj + 1]);
-						sum = _mm512_fmadd_ps(pixels, filterVal, sum);
-					}
-					int dj = 1;
-					__m512 pixels = _mm512_mask_loadu_ps(_mm512_setzero_ps(), 0x7FFF, &img[(i + di) * num_cols + (j + 1)]);
-					__m512 filterVal = _mm512_set1_ps(kernel[di + 1][dj + 1]);
-					sum = _mm512_fmadd_ps(pixels, filterVal, sum);
-				}
-				_mm512_storeu_ps(&result[i * num_cols + j], sum);
-			}
-#pragma omp single
-			{
-				// std::cout << "4"<< omp_get_thread_num() << std::endl;
-				int i = num_rows - 1, j = num_cols - 16;
-				__m512 sum = _mm512_setzero_ps();
-				for (int di = -1; di <= 0; di++)
-				{
-					for (int dj = -1; dj <= 0; dj++)
-					{
-						int ni = i + di, nj = j + dj;
-						__m512 pixels = _mm512_loadu_ps(&img[ni * num_cols + nj]);
-						__m512 filterVal = _mm512_set1_ps(kernel[di + 1][dj + 1]);
-						sum = _mm512_fmadd_ps(pixels, filterVal, sum);
-					}
-					int dj = 1;
-					__m512 pixels = _mm512_mask_loadu_ps(_mm512_setzero_ps(), 0x7FFF, &img[(i + di) * num_cols + (j + 1)]);
-					__m512 filterVal = _mm512_set1_ps(kernel[di + 1][dj + 1]);
-					sum = _mm512_fmadd_ps(pixels, filterVal, sum);
-				}
-				_mm512_storeu_ps(&result[i * num_cols + j], sum);
-			}
-		}
-#pragma omp for schedule(dynamic)
-		for (int i = 1; i < num_rows - 1; ++i)
-		{
-			for (int j = 16; j < num_cols - 16; j += 16)
+			for (int j = 0; j < num_cols; j += 16)
 			{
 				__m512 sum = _mm512_setzero_ps();
+				__m512 pixels, filterVal;
 				for (int di = -1; di <= 1; di++)
 				{
-					for (int dj = -1; dj <= 1; dj++)
+					int ni = i + di;
+					if (ni >= 0 && ni < num_rows)
 					{
-						int ni = i + di;
-						int nj = j + dj;
-						// _mm_prefetch((const char *)&img[(ni + 1) * num_cols + nj], _MM_HINT_T2);
-						__m512 pixels = _mm512_loadu_ps(&img[ni * num_cols + nj]);
-						__m512 filterVal = _mm512_set1_ps(kernel[di + 1][dj + 1]);
-						sum = _mm512_fmadd_ps(pixels, filterVal, sum);
+						__mmask16 mask[3] = {0xFFFF, 0xFFFF, 0xFFFF};
+						if (j - 1 < 0)
+							mask[0] &= 0xFFFE;
+						if (j + 16 >= num_cols)
+							mask[2] &= 0x7FFF;
+
+						for (int k = 0; k < 3; ++k)
+						{
+							pixels = _mm512_mask_loadu_ps(_mm512_setzero_ps(), mask[k], &img[ni * num_cols + j + k - 1]);
+							filterVal = _mm512_set1_ps(kernel[di + 1][k]);
+							sum = _mm512_fmadd_ps(pixels, filterVal, sum);
+						}
 					}
 				}
 				_mm512_storeu_ps(&result[i * num_cols + j], sum);
 			}
 		}
+		// #pragma omp parallel
+		// 		{
+
+		// 			{
+		// 				int i = 0;
+		// #pragma omp for
+		// 				for (int j = 16; j < num_cols - 16; j++)
+		// 				{
+		// 					__m512 sum = _mm512_setzero_ps();
+		// 					for (int di = 0; di <= 1; di++)
+		// 					{
+		// 						for (int dj = -1; dj <= 1; dj++)
+		// 						{
+		// 							int ni = i + di, nj = j + dj;
+		// 							__m512 pixels = _mm512_loadu_ps(&img[ni * num_cols + nj]);
+		// 							__m512 filterVal = _mm512_set1_ps(kernel[di + 1][dj + 1]);
+		// 							sum = _mm512_fmadd_ps(pixels, filterVal, sum);
+		// 						}
+		// 					}
+		// 					_mm512_storeu_ps(&result[j], sum);
+		// 				}
+		// 			}
+		// 			// #pragma omp task
+		// 			{
+		// 				int i = num_rows - 1;
+		// #pragma omp for
+		// 				for (int j = 16; j < num_cols - 16; j++)
+		// 				{
+		// 					__m512 sum = _mm512_setzero_ps();
+		// 					for (int di = -1; di <= 0; di++)
+		// 					{
+		// 						for (int dj = -1; dj <= 1; dj++)
+		// 						{
+		// 							int ni = i + di, nj = j + dj;
+		// 							__m512 pixels = _mm512_loadu_ps(&img[ni * num_cols + nj]);
+		// 							__m512 filterVal = _mm512_set1_ps(kernel[di + 1][dj + 1]);
+		// 							sum = _mm512_fmadd_ps(pixels, filterVal, sum);
+		// 						}
+		// 					}
+		// 					_mm512_storeu_ps(&result[i * num_cols + j], sum);
+		// 				}
+		// 			}
+		// 			// #pragma omp task
+		// 			{
+		// 				int j = 0;
+		// #pragma omp for
+		// 				for (int i = 1; i < num_rows - 1; i++)
+		// 				{
+		// 					__m512 sum = _mm512_setzero_ps();
+		// 					for (int di = -1; di <= 1; di++)
+		// 					{
+		// 						int dj = -1;
+		// 						__m512 pixels = _mm512_mask_loadu_ps(_mm512_setzero_ps(), 0xFFFE, &img[(i + di) * num_cols + (j - 1)]);
+		// 						__m512 filterVal = _mm512_set1_ps(kernel[di + 1][dj + 1]);
+		// 						sum = _mm512_fmadd_ps(pixels, filterVal, sum);
+
+		// 						for (int dj = 0; dj <= 1; dj++)
+		// 						{
+		// 							int ni = i + di, nj = j + dj;
+		// 							__m512 pixels = _mm512_loadu_ps(&img[ni * num_cols + nj]);
+		// 							__m512 filterVal = _mm512_set1_ps(kernel[di + 1][dj + 1]);
+		// 							sum = _mm512_fmadd_ps(pixels, filterVal, sum);
+		// 						}
+		// 					}
+		// 					_mm512_storeu_ps(&result[i * num_cols], sum);
+		// 				}
+		// 			}
+		// 			// #pragma omp task
+		// 			{
+		// 				int j = num_cols - 16;
+		// #pragma omp for
+		// 				for (int i = 1; i < num_rows - 1; i++)
+		// 				{
+		// 					__m512 sum = _mm512_setzero_ps();
+		// 					for (int di = -1; di <= 1; di++)
+		// 					{
+		// 						for (int dj = -1; dj <= 0; dj++)
+		// 						{
+		// 							int ni = i + di, nj = j + dj;
+		// 							__m512 pixels = _mm512_loadu_ps(&img[ni * num_cols + nj]);
+		// 							__m512 filterVal = _mm512_set1_ps(kernel[di + 1][dj + 1]);
+		// 							sum = _mm512_fmadd_ps(pixels, filterVal, sum);
+		// 						}
+		// 						int dj = 1;
+		// 						__m512 pixels = _mm512_mask_loadu_ps(_mm512_setzero_ps(), 0x7FFF, &img[(i + di) * num_cols + (j + 1)]);
+		// 						__m512 filterVal = _mm512_set1_ps(kernel[di + 1][dj + 1]);
+		// 						sum = _mm512_fmadd_ps(pixels, filterVal, sum);
+		// 					}
+		// 					_mm512_storeu_ps(&result[i * num_cols + j], sum);
+		// 				}
+		// 			}
+		// #pragma omp single
+		// 			{
+		// 				int i = 0, j = 0;
+		// 				__m512 sum = _mm512_setzero_ps();
+		// 				for (int di = 0; di <= 1; di++)
+		// 				{
+		// 					int dj = -1;
+		// 					__m512 pixels = _mm512_mask_loadu_ps(_mm512_setzero_ps(), 0xFFFE, &img[(i + di) * num_cols + (j - 1)]);
+		// 					__m512 filterVal = _mm512_set1_ps(kernel[di + 1][dj + 1]);
+		// 					sum = _mm512_fmadd_ps(pixels, filterVal, sum);
+
+		// 					for (int dj = 0; dj <= 1; dj++)
+		// 					{
+		// 						int ni = i + di, nj = j + dj;
+		// 						__m512 pixels = _mm512_loadu_ps(&img[ni * num_cols + nj]);
+		// 						__m512 filterVal = _mm512_set1_ps(kernel[di + 1][dj + 1]);
+		// 						sum = _mm512_fmadd_ps(pixels, filterVal, sum);
+		// 					}
+		// 				}
+		// 				_mm512_storeu_ps(&result[i * num_cols], sum);
+		// 			}
+		// // #pragma omp single
+		// 			{
+		// 				int i = num_rows - 1, j = 0;
+		// 				__m512 sum = _mm512_setzero_ps();
+		// 				for (int di = -1; di <= 0; di++)
+		// 				{
+		// 					int dj = -1;
+		// 					__m512 pixels = _mm512_mask_loadu_ps(_mm512_setzero_ps(), 0xFFFE, &img[(i + di) * num_cols + (j - 1)]);
+		// 					__m512 filterVal = _mm512_set1_ps(kernel[di + 1][dj + 1]);
+		// 					sum = _mm512_fmadd_ps(pixels, filterVal, sum);
+
+		// 					for (int dj = 0; dj <= 1; dj++)
+		// 					{
+		// 						int ni = i + di, nj = j + dj;
+		// 						__m512 pixels = _mm512_loadu_ps(&img[ni * num_cols + nj]);
+		// 						__m512 filterVal = _mm512_set1_ps(kernel[di + 1][dj + 1]);
+		// 						sum = _mm512_fmadd_ps(pixels, filterVal, sum);
+		// 					}
+		// 				}
+		// 				_mm512_storeu_ps(&result[i * num_cols], sum);
+		// 			}
+		// // #pragma omp single
+		// 			{
+		// 				int i = 0, j = num_cols - 16;
+		// 				__m512 sum = _mm512_setzero_ps();
+		// 				for (int di = 0; di <= 1; di++)
+		// 				{
+		// 					for (int dj = -1; dj <= 0; dj++)
+		// 					{
+		// 						int ni = i + di, nj = j + dj;
+		// 						__m512 pixels = _mm512_loadu_ps(&img[ni * num_cols + nj]);
+		// 						__m512 filterVal = _mm512_set1_ps(kernel[di + 1][dj + 1]);
+		// 						sum = _mm512_fmadd_ps(pixels, filterVal, sum);
+		// 					}
+		// 					int dj = 1;
+		// 					__m512 pixels = _mm512_mask_loadu_ps(_mm512_setzero_ps(), 0x7FFF, &img[(i + di) * num_cols + (j + 1)]);
+		// 					__m512 filterVal = _mm512_set1_ps(kernel[di + 1][dj + 1]);
+		// 					sum = _mm512_fmadd_ps(pixels, filterVal, sum);
+		// 				}
+		// 				_mm512_storeu_ps(&result[i * num_cols + j], sum);
+		// 			}
+		// // #pragma omp single
+		// 			{
+		// 				// std::cout << "4"<< omp_get_thread_num() << std::endl;
+		// 				int i = num_rows - 1, j = num_cols - 16;
+		// 				__m512 sum = _mm512_setzero_ps();
+		// 				for (int di = -1; di <= 0; di++)
+		// 				{
+		// 					for (int dj = -1; dj <= 0; dj++)
+		// 					{
+		// 						int ni = i + di, nj = j + dj;
+		// 						__m512 pixels = _mm512_loadu_ps(&img[ni * num_cols + nj]);
+		// 						__m512 filterVal = _mm512_set1_ps(kernel[di + 1][dj + 1]);
+		// 						sum = _mm512_fmadd_ps(pixels, filterVal, sum);
+		// 					}
+		// 					int dj = 1;
+		// 					__m512 pixels = _mm512_mask_loadu_ps(_mm512_setzero_ps(), 0x7FFF, &img[(i + di) * num_cols + (j + 1)]);
+		// 					__m512 filterVal = _mm512_set1_ps(kernel[di + 1][dj + 1]);
+		// 					sum = _mm512_fmadd_ps(pixels, filterVal, sum);
+		// 				}
+		// 				_mm512_storeu_ps(&result[i * num_cols + j], sum);
+		// 			}
+		// 		}
+		// // #pragma omp for schedule(dynamic)
+		// 		for (int i = 1; i < num_rows - 1; ++i)
+		// 		{
+		// 			for (int j = 16; j < num_cols - 16; j += 16)
+		// 			{
+		// 				__m512 sum = _mm512_setzero_ps();
+		// 				for (int di = -1; di <= 1; di++)
+		// 				{
+		// 					for (int dj = -1; dj <= 1; dj++)
+		// 					{
+		// 						int ni = i + di;
+		// 						int nj = j + dj;
+		// 						// _mm_prefetch((const char *)&img[(ni + 1) * num_cols + nj], _MM_HINT_T2);
+		// 						__m512 pixels = _mm512_loadu_ps(&img[ni * num_cols + nj]);
+		// 						__m512 filterVal = _mm512_set1_ps(kernel[di + 1][dj + 1]);
+		// 						sum = _mm512_fmadd_ps(pixels, filterVal, sum);
+		// 					}
+		// 				}
+		// 				_mm512_storeu_ps(&result[i * num_cols + j], sum);
+		// 			}
+		// 		}
 		// std::cout << "done" << std::endl;
 
 		// sol_fs.write(reinterpret_cast<const char *>(result), sizeof(float) * num_rows * num_cols);
