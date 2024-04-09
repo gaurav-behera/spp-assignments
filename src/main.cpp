@@ -18,7 +18,8 @@ namespace solution
 {
 	std::string compute(const std::string &bitmap_path, const float kernel[3][3], const std::int32_t num_rows, const std::int32_t num_cols)
 	{
-		std::string sol_path = "student_sol.bmp";
+		std::string sol_path = std::filesystem::temp_directory_path() / "student_sol.bmp";
+
 
 		int bitmap_fd = open(bitmap_path.c_str(), O_RDONLY);
 
@@ -30,7 +31,7 @@ namespace solution
 
 #pragma omp parallel proc_bind(spread) 
 		{
-#pragma omp for 
+#pragma omp for collapse(2)
 			for (int i = 0; i < num_rows; ++i)
 			{
 				for (int j = 0; j < num_cols; j += 16)
