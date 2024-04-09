@@ -72,7 +72,7 @@ namespace solution
 								sum = _mm512_fmadd_ps(pixels, filterVal, sum);
 							}
 						}
-						_mm512_store_ps(&result[j], sum);
+						_mm512_storeu_ps(&result[j], sum);
 					}
 				}
 #pragma omp task
@@ -92,7 +92,7 @@ namespace solution
 								sum = _mm512_fmadd_ps(pixels, filterVal, sum);
 							}
 						}
-						_mm512_store_ps(&result[i * num_cols + j], sum);
+						_mm512_storeu_ps(&result[i * num_cols + j], sum);
 					}
 				}
 #pragma omp task
@@ -117,7 +117,7 @@ namespace solution
 								sum = _mm512_fmadd_ps(pixels, filterVal, sum);
 							}
 						}
-						_mm512_store_ps(&result[i * num_cols], sum);
+						_mm512_storeu_ps(&result[i * num_cols], sum);
 					}
 				}
 #pragma omp task
@@ -141,7 +141,7 @@ namespace solution
 							__m512 filterVal = _mm512_set1_ps(kernel[di + 1][dj + 1]);
 							sum = _mm512_fmadd_ps(pixels, filterVal, sum);
 						}
-						_mm512_store_ps(&result[i * num_cols + j], sum);
+						_mm512_storeu_ps(&result[i * num_cols + j], sum);
 					}
 				}
 #pragma omp task
@@ -163,7 +163,7 @@ namespace solution
 							sum = _mm512_fmadd_ps(pixels, filterVal, sum);
 						}
 					}
-					_mm512_store_ps(&result[i * num_cols], sum);
+					_mm512_storeu_ps(&result[i * num_cols], sum);
 				}
 #pragma omp task
 				{
@@ -184,7 +184,7 @@ namespace solution
 							sum = _mm512_fmadd_ps(pixels, filterVal, sum);
 						}
 					}
-					_mm512_store_ps(&result[i * num_cols], sum);
+					_mm512_storeu_ps(&result[i * num_cols], sum);
 				}
 #pragma omp task
 				{
@@ -204,7 +204,7 @@ namespace solution
 						__m512 filterVal = _mm512_set1_ps(kernel[di + 1][dj + 1]);
 						sum = _mm512_fmadd_ps(pixels, filterVal, sum);
 					}
-					_mm512_store_ps(&result[i * num_cols + j], sum);
+					_mm512_storeu_ps(&result[i * num_cols + j], sum);
 				}
 #pragma omp task
 				{
@@ -225,7 +225,7 @@ namespace solution
 						__m512 filterVal = _mm512_set1_ps(kernel[di + 1][dj + 1]);
 						sum = _mm512_fmadd_ps(pixels, filterVal, sum);
 					}
-					_mm512_store_ps(&result[i * num_cols + j], sum);
+					_mm512_storeu_ps(&result[i * num_cols + j], sum);
 				}
 			}
 #pragma omp for schedule(dynamic)
@@ -245,7 +245,7 @@ namespace solution
 							sum = _mm512_fmadd_ps(pixels, filterVal, sum);
 						}
 					}
-					_mm512_store_ps(&result[i * num_cols + j], sum);
+					_mm512_storeu_ps(&result[i * num_cols + j], sum);
 				}
 			}
 			// std::cout << "done" << std::endl;
