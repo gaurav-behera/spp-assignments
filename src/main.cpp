@@ -9,6 +9,8 @@
 #include <string>
 #include <vector>
 #include <omp.h>
+#include <fcntl.h>
+#include <sys/mman.h> 
 
 namespace solution
 {
@@ -20,19 +22,29 @@ namespace solution
 		std::ofstream sol_fs(sol_path, std::ios::binary);
 		std::ifstream bitmap_fs(bitmap_path, std::ios::binary);
 		// const auto img = std::make_unique<float[]>(num_rows * num_cols);
-		void *aligned_img_ptr;
-		if (posix_memalign(&aligned_img_ptr, 64, sizeof(float) * num_rows * num_cols) != 0)
-		{
-			throw std::bad_alloc();
-		}
-		float *img = static_cast<float *>(aligned_img_ptr);
+		// void *aligned_img_ptr;
+		// if (posix_memalign(&aligned_img_ptr, 64, sizeof(float) * num_rows * num_cols) != 0)
+		// {
+		// 	throw std::bad_alloc();
+		// }
+		// float *img = static_cast<float *>(aligned_img_ptr);
 
-		void *aligned_result;
-		if (posix_memalign(&aligned_result, 64, sizeof(float) * num_rows * num_cols) != 0)
-		{
-			throw std::bad_alloc();
-		}
-		float *result = static_cast<float *>(aligned_result);
+		// void *aligned_result;
+		// if (posix_memalign(&aligned_result, 64, sizeof(float) * num_rows * num_cols) != 0)
+		// {
+		// 	throw std::bad_alloc();
+		// }
+		// float *result = static_cast<float *>(aligned_result);
+
+		// mmap
+        int bitmap_fd = open(bitmap_path.c_str(), O_RDONLY);
+
+        void *mapped_img = mmap(NULL, sizeof(float) * num_rows * num_cols, PROT_READ, MAP_PRIVATE, bitmap_fd, 0);
+        float *img = static_cast<float *>(mapped_img);
+
+        void *mapped_result = mmap(NULL, sizeof(float) * num_rows * num_cols, PROT_WRITE | PROT_READ, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+        float *result = static_cast<float *>(mapped_result);
+
 
 		bitmap_fs.read(reinterpret_cast<char *>(img), sizeof(float) * num_rows * num_cols);
 		bitmap_fs.close();
@@ -255,9 +267,9 @@ omp_set_num_threads(4);
 
 		sol_fs.write(reinterpret_cast<const char *>(result), sizeof(float) * num_rows * num_cols);
 		sol_fs.close();
-		free(result);
-		free(img);
-
+		munmap(mapped_img, sizeof(float) * num_rows * num_cols);
+        munmap(mapped_result, sizeof(float) * num_rows * num_cols);
+        close(bitmap_fd);
 		return sol_path;
 	}
 }
