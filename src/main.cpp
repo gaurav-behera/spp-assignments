@@ -41,11 +41,11 @@ namespace solution
 #pragma omp parallel
 		{
 			int tid = omp_get_thread_num();
-            int cpu_id = numa_node_cpus[(tid % 24)*2];
-            cpu_set_t cpuset;
-            CPU_ZERO(&cpuset);
-            CPU_SET(cpu_id, &cpuset);
-            pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
+			int cpu_id = (tid % 24) * 2;
+			cpu_set_t cpuset;
+			CPU_ZERO(&cpuset);
+			CPU_SET(cpu_id, &cpuset);
+			pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
 #pragma omp single nowait
 			{
 #pragma omp task
