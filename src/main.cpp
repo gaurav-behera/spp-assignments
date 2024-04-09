@@ -28,7 +28,7 @@ namespace solution
 		ftruncate(result_fd, sizeof(float) * num_rows * num_cols);
 		float *result = reinterpret_cast<float *>(mmap(NULL, sizeof(float) * num_rows * num_cols, PROT_WRITE | PROT_READ, MAP_SHARED, result_fd, 0));
 
-#pragma omp parallel proc_bind(spread)
+#pragma omp parallel proc_bind(close)
 		{
 #pragma omp for collapse(2)
 			for (int i = 0; i < num_rows; ++i)
@@ -38,12 +38,12 @@ namespace solution
 					__m512 sum = _mm512_setzero_ps();
 					for (int di = -1; di <= 1; di++)
 					{
-						int ni = i + di;
-						if (ni >= 0 && ni < num_rows)
+						for (int dj = -1; dj <= 1; dj++)
 						{
-							for (int dj = -1; dj <= 1; dj++)
+							int ni = i + di, nj = j + dj;
+
+							if (ni >= 0 && ni < num_rows)
 							{
-								int nj = j + dj;
 								__mmask16 mask = 0xFFFF;
 								if (nj < 0)
 									mask &= 0xFFFE;
