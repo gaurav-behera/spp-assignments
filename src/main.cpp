@@ -89,7 +89,7 @@ namespace solution
 						int ni = i + di;
 						int nj = j + dj;
 						// _mm_prefetch((const char *)&img[(ni + 1) * num_cols + nj], _MM_HINT_T2);
-						__m512 pixels = _mm512_loadu_ps(&paddedImage[ni * num_cols + nj]);
+						__m512 pixels = _mm512_loadu_ps(&paddedImage[ni * (num_cols+2) + nj]);
 						__m512 filterVal = _mm512_set1_ps(kernel[di + 1][dj + 1]);
 						sum = _mm512_fmadd_ps(pixels, filterVal, sum);
 					}
@@ -100,10 +100,10 @@ namespace solution
 
 // 		// std::cout << "done" << std::endl;
 // 		// sol_fs.write(reinterpret_cast<const char *>(result), sizeof(float) * num_rows * num_cols);
-// 		munmap(img, sizeof(float) * num_rows * num_cols);
-// 		munmap(result, sizeof(float) * num_rows * num_cols);
-// 		close(bitmap_fd);
-// 		close(result_fd);
+		munmap(mapped_img, sizeof(float) * num_rows * num_cols);
+		munmap(result, sizeof(float) * num_rows * num_cols);
+		close(bitmap_fd);
+		close(result_fd);
 
 		return sol_path;
 	}
