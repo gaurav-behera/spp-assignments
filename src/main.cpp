@@ -21,7 +21,6 @@ namespace solution
 
 		std::string sol_path = std::filesystem::temp_directory_path() / "student_sol.bmp";
 		std::ofstream sol_fs(sol_path, std::ios::binary);
-		std::ifstream bitmap_fs(bitmap_path, std::ios::binary);
 		// const auto img = std::make_unique<float[]>(num_rows * num_cols);
 		// void *aligned_img_ptr;
 		// if (posix_memalign(&aligned_img_ptr, 64, sizeof(float) * num_rows * num_cols) != 0)
@@ -39,20 +38,9 @@ namespace solution
 
 		// mmap
 		int bitmap_fd = open(bitmap_path.c_str(), O_RDONLY);
-
-		// void *mapped_img = mmap(NULL, sizeof(float) * num_rows * num_cols, PROT_READ, MAP_PRIVATE, bitmap_fd, 0);
-		// float *img = static_cast<float *>(mapped_img);
-
-		// void *mapped_result = mmap(NULL, sizeof(float) * num_rows * num_cols, PROT_WRITE | PROT_READ, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
-		// float *result = static_cast<float *>(mapped_result);
-
 		const auto img = reinterpret_cast<float*>(mmap(nullptr, num_rows * num_cols * sizeof(float), PROT_READ, MAP_PRIVATE, bitmap_fd, 0));
-		// float* result = reinterpret_cast<float*>(mmap(nullptr, num_rows * num_cols * sizeof(float), PROT_WRITE, MAP_PRIVATE, -1, 0));
-
-
-
-		bitmap_fs.read(reinterpret_cast<char *>(img), sizeof(float) * num_rows * num_cols);
-		bitmap_fs.close();
+		read(bitmap_fd, img, num_rows * num_cols * sizeof(float));
+		close(bitmap_fd);
 
 // omp_set_num_threads(4);
 #pragma omp parallel
@@ -82,7 +70,7 @@ namespace solution
 								sum = _mm512_fmadd_ps(pixels, filterVal, sum);
 							}
 						}
-						_mm512_storeu_ps(&result[j], sum);
+						_mm512_store_ps(&result[j], sum);
 					}
 				}
 #pragma omp task
@@ -102,7 +90,7 @@ namespace solution
 								sum = _mm512_fmadd_ps(pixels, filterVal, sum);
 							}
 						}
-						_mm512_storeu_ps(&result[i * num_cols + j], sum);
+						_mm512_store_ps(&result[i * num_cols + j], sum);
 					}
 				}
 #pragma omp task
@@ -127,7 +115,7 @@ namespace solution
 								sum = _mm512_fmadd_ps(pixels, filterVal, sum);
 							}
 						}
-						_mm512_storeu_ps(&result[i * num_cols], sum);
+						_mm512_store_ps(&result[i * num_cols], sum);
 					}
 				}
 #pragma omp task
@@ -151,7 +139,7 @@ namespace solution
 							__m512 filterVal = _mm512_set1_ps(kernel[di + 1][dj + 1]);
 							sum = _mm512_fmadd_ps(pixels, filterVal, sum);
 						}
-						_mm512_storeu_ps(&result[i * num_cols + j], sum);
+						_mm512_store_ps(&result[i * num_cols + j], sum);
 					}
 				}
 #pragma omp task
@@ -173,7 +161,7 @@ namespace solution
 							sum = _mm512_fmadd_ps(pixels, filterVal, sum);
 						}
 					}
-					_mm512_storeu_ps(&result[i * num_cols], sum);
+					_mm512_store_ps(&result[i * num_cols], sum);
 				}
 #pragma omp task
 				{
@@ -194,7 +182,7 @@ namespace solution
 							sum = _mm512_fmadd_ps(pixels, filterVal, sum);
 						}
 					}
-					_mm512_storeu_ps(&result[i * num_cols], sum);
+					_mm512_store_ps(&result[i * num_cols], sum);
 				}
 #pragma omp task
 				{
@@ -214,7 +202,7 @@ namespace solution
 						__m512 filterVal = _mm512_set1_ps(kernel[di + 1][dj + 1]);
 						sum = _mm512_fmadd_ps(pixels, filterVal, sum);
 					}
-					_mm512_storeu_ps(&result[i * num_cols + j], sum);
+					_mm512_store_ps(&result[i * num_cols + j], sum);
 				}
 #pragma omp task
 				{
@@ -235,7 +223,7 @@ namespace solution
 						__m512 filterVal = _mm512_set1_ps(kernel[di + 1][dj + 1]);
 						sum = _mm512_fmadd_ps(pixels, filterVal, sum);
 					}
-					_mm512_storeu_ps(&result[i * num_cols + j], sum);
+					_mm512_store_ps(&result[i * num_cols + j], sum);
 				}
 			}
 #pragma omp for schedule(dynamic)
@@ -255,7 +243,7 @@ namespace solution
 							sum = _mm512_fmadd_ps(pixels, filterVal, sum);
 						}
 					}
-					_mm512_storeu_ps(&result[i * num_cols + j], sum);
+					_mm512_store_ps(&result[i * num_cols + j], sum);
 				}
 			}
 			// std::cout << "done" << std::endl;
