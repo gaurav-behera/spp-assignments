@@ -18,49 +18,16 @@ namespace solution
 {
 	std::string compute(const std::string &bitmap_path, const float kernel[3][3], const std::int32_t num_rows, const std::int32_t num_cols)
 	{
-		std::string sol_path = "student_sol.bmp";
+		std::string sol_path = std::filesystem::temp_directory_path() / "student_sol.bmp";
 
 		int bitmap_fd = open(bitmap_path.c_str(), O_RDONLY);
-		if (bitmap_fd == -1)
-		{
-			std::cerr << "Failed to open bitmap file: " << std::endl;
-			return "";
-		}
-
 		void *mapped_img = mmap(NULL, sizeof(float) * num_rows * num_cols, PROT_READ, MAP_PRIVATE, bitmap_fd, 0);
-		if (mapped_img == MAP_FAILED)
-		{
-			std::cerr << "Failed to mmap bitmap file: " << std::endl;
-			close(bitmap_fd);
-			return "";
-		}
 		float *img = static_cast<float *>(mapped_img);
 
 		int result_fd = open(sol_path.c_str(), O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
-		if (result_fd == -1)
-		{
-			std::cerr << "Failed to open result file: " << std::endl;
-			munmap(mapped_img, sizeof(float) * num_rows * num_cols);
-			close(bitmap_fd);
-			return "";
-		}
-		if (ftruncate(result_fd, sizeof(float) * num_rows * num_cols) == -1)
-		{
-			std::cerr << "Failed to set file size: " << std::endl;
-			close(result_fd);
-			return "";
-		}
+		
 
-		void *mapped_result = mmap(NULL, sizeof(float) * num_rows * num_cols, PROT_WRITE | PROT_READ, MAP_SHARED, result_fd, 0);
-		if (mapped_result == MAP_FAILED)
-		{
-			// std::cerr << "Failed to mmap result file: " << std::endl;
-			std::cerr << "Failed to mmap result file: " << strerror(errno) << std::endl;
-			munmap(mapped_img, sizeof(float) * num_rows * num_cols);
-			close(bitmap_fd);
-			close(result_fd);
-			return "";
-		}
+		void *mapped_result = mmap(NULL, sizeof(float) * num_rows * num_cols, PROT_WRITE | PROT_READ, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0);
 		float *result = static_cast<float *>(mapped_result);
 
 		// for (int i = 0; i < num_cols * num_rows; i++)
@@ -293,6 +260,7 @@ namespace solution
 			// std::cout << "done" << std::endl;
 		}
 		// sol_fs.write(reinterpret_cast<const char *>(result), sizeof(float) * num_rows * num_cols);
+		write(result_fd, result, num_cols*num_rows*sizeof(float));
 		munmap(mapped_img, sizeof(float) * num_rows * num_cols);
 		munmap(mapped_result, sizeof(float) * num_rows * num_cols);
 		close(bitmap_fd);
