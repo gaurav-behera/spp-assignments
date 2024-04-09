@@ -29,9 +29,10 @@ namespace solution
 		float *result = reinterpret_cast<float *>(mmap(NULL, sizeof(float) * size, PROT_WRITE | PROT_READ, MAP_SHARED, result_fd, 0));
 
 #pragma omp parallel proc_bind(spread)
+#pragma omp single
 		{
-#pragma omp for schedule(dynamic, 80)
-			for (int k = 0; k < size; k+=16)
+#pragma omp taskloop
+			for (int k = 0; k < size; k += 16)
 			{
 				int i = k / num_cols, j = k % num_cols;
 				__m512 sum = _mm512_setzero_ps();
