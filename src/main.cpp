@@ -40,7 +40,7 @@ namespace solution
 // omp_set_num_threads(24);
 #pragma omp parallel
 		{
-#pragma omp single no wait
+#pragma omp single nowait
 			{
 #pragma omp task
 				{
