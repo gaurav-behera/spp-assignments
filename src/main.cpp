@@ -96,10 +96,10 @@ namespace solution
 			}
 		}
 		// sol_fs.write(reinterpret_cast<const char *>(result), sizeof(float) * num_rows * num_cols);
-		munmap(mapped_img, sizeof(float) * num_rows * num_cols);
-		munmap(result, sizeof(float) * num_rows * num_cols);
-		close(bitmap_fd);
-		close(result_fd);
+		// munmap(mapped_img, sizeof(float) * num_rows * num_cols);
+		// munmap(result, sizeof(float) * num_rows * num_cols);
+		// close(bitmap_fd);
+		// close(result_fd);
 
 		return sol_path;
 	}
