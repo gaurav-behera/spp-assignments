@@ -30,12 +30,12 @@ namespace solution
 		// }
 		// float *img = static_cast<float *>(aligned_img_ptr);
 
-		// void *aligned_result;
-		// if (posix_memalign(&aligned_result, 64, sizeof(float) * num_rows * num_cols) != 0)
-		// {
-		// 	throw std::bad_alloc();
-		// }
-		// float *result = static_cast<float *>(aligned_result);
+		void *aligned_result;
+		if (posix_memalign(&aligned_result, 64, sizeof(float) * num_rows * num_cols) != 0)
+		{
+			throw std::bad_alloc();
+		}
+		float *result = static_cast<float *>(aligned_result);
 
 		// mmap
 		int bitmap_fd = open(bitmap_path.c_str(), O_RDONLY);
@@ -47,7 +47,7 @@ namespace solution
 		// float *result = static_cast<float *>(mapped_result);
 
 		const float* img = reinterpret_cast<float*>(mmap(nullptr, num_rows * num_cols * sizeof(float), PROT_READ, MAP_PRIVATE, bitmap_fd, 0));
-		float* result = reinterpret_cast<float*>(mmap(nullptr, num_rows * num_cols * sizeof(float), PROT_WRITE, MAP_PRIVATE, -1, 0));
+		// float* result = reinterpret_cast<float*>(mmap(nullptr, num_rows * num_cols * sizeof(float), PROT_WRITE, MAP_PRIVATE, -1, 0));
 
 
 
