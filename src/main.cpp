@@ -30,7 +30,7 @@ namespace solution
 
 #pragma omp parallel proc_bind(spread)
 		{
-#pragma omp for schedule(dynamic, 16)
+#pragma omp for schedule(dynamic, 40)
 			for (int k = 0; k < size; k+=16)
 			{
 				int i = k / num_cols, j = k % num_cols;
