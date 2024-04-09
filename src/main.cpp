@@ -67,7 +67,7 @@ namespace solution
 		for (int i = 0; i < num_rows; i++)
 		{
 			paddedImage[i * (num_cols + 2)] = 0;
-			memcpy(paddedImage + i * (num_cols + 2) + 1, img + i, num_cols);
+			memcpy(paddedImage + i * (num_cols + 2) + 1, img + (i*num_cols), num_cols);
 			paddedImage[(i + 1) * (num_cols + 2) - 1] = 0;
 		}
 		std::fill(paddedImage + ((num_cols + 2) * (num_rows + 1)), paddedImage + ((num_cols + 2) * (num_rows + 1)) + (num_cols + 2), 0.0f);
