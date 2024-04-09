@@ -40,11 +40,16 @@ namespace solution
 		// mmap
 		int bitmap_fd = open(bitmap_path.c_str(), O_RDONLY);
 
-		void *mapped_img = mmap(NULL, sizeof(float) * num_rows * num_cols, PROT_READ, MAP_PRIVATE, bitmap_fd, 0);
-		float *img = static_cast<float *>(mapped_img);
+		// void *mapped_img = mmap(NULL, sizeof(float) * num_rows * num_cols, PROT_READ, MAP_PRIVATE, bitmap_fd, 0);
+		// float *img = static_cast<float *>(mapped_img);
 
-		void *mapped_result = mmap(NULL, sizeof(float) * num_rows * num_cols, PROT_WRITE | PROT_READ, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
-		float *result = static_cast<float *>(mapped_result);
+		// void *mapped_result = mmap(NULL, sizeof(float) * num_rows * num_cols, PROT_WRITE | PROT_READ, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+		// float *result = static_cast<float *>(mapped_result);
+
+		const float* img = reinterpret_cast<float*>(mmap(nullptr, num_rows * num_cols * sizeof(float), PROT_READ, MAP_PRIVATE, bitmap_fd, 0));
+		float* result = reinterpret_cast<float*>(mmap(nullptr, num_rows * num_cols * sizeof(float), PROT_WRITE, MAP_PRIVATE, -1, 0));
+
+
 
 		bitmap_fs.read(reinterpret_cast<char *>(img), sizeof(float) * num_rows * num_cols);
 		bitmap_fs.close();
