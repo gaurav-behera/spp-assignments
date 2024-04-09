@@ -7,4 +7,4 @@ if(OpenMP_CXX_FOUND)
     target_link_libraries(studentlib PRIVATE OpenMP::OpenMP_CXX)
 endif()
 
-target_compile_options(studentlib PRIVATE -Ofast -march=native -fopenmp) 
+target_compile_options(studentlib PRIVATE -Ofast -march=native) 
