@@ -44,15 +44,31 @@ namespace solution
 		read(bitmap_fd, img, num_rows * num_cols * sizeof(float));
 		close(bitmap_fd);
 
-// omp_set_num_threads(4);
-#pragma omp parallel
+#pragma omp parallel num_threads(24)
 		{
-// int tid = omp_get_thread_num();
-// int cpu_id = (tid % 24) * 2;
-// cpu_set_t cpuset;
-// CPU_ZERO(&cpuset);
-// CPU_SET(cpu_id, &cpuset);
-// pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
+			int tid = omp_get_thread_num();
+			int num_threads = omp_get_num_threads();
+			int node_cpus[] = {0, 1};	// CPU cores per NUMA node
+			int num_cpus_per_node = 24; // Number of CPU cores per NUMA node
+			int nodes = 2;				// Number of NUMA nodes
+
+			// Calculate loop iteration range for each thread based on NUMA node
+			int chunk_size = (num_rows - 2) / num_threads;
+			int start_i = 1 + tid * chunk_size;
+			int end_i = (tid == num_threads - 1) ? num_rows - 1 : start_i + chunk_size;
+
+			int node_id = tid % nodes;
+
+#pragma omp critical
+			{
+				cpu_set_t cpuset;
+				CPU_ZERO(&cpuset);
+				for (int i = 0; i < num_cpus_per_node; i++)
+				{
+					CPU_SET(node_cpus[node_id] + i, &cpuset);
+				}
+				sched_setaffinity(0, sizeof(cpu_set_t), &cpuset);
+			}
 #pragma omp single nowait
 			{
 #pragma omp task
@@ -228,8 +244,8 @@ namespace solution
 					_mm512_storeu_ps(&result[i * num_cols + j], sum);
 				}
 			}
-#pragma omp for schedule(dynamic)
-			for (int i = 1; i < num_rows - 1; ++i)
+// #pragma omp for schedule(dynamic)
+			for (int i = start_i; i < end_i; ++i)
 			{
 				for (int j = 16; j < num_cols - 16; j += 16)
 				{
@@ -238,8 +254,9 @@ namespace solution
 					{
 						for (int dj = -1; dj <= 1; dj++)
 						{
-							int ni = i + di, nj = j + dj;
-							_mm_prefetch((const char *)&img[(ni + 1) * num_cols + nj], _MM_HINT_T2);
+							int ni = i + di;
+							int nj = j + dj;
+							// _mm_prefetch((const char *)&img[(ni + 1) * num_cols + nj], _MM_HINT_T2);
 							__m512 pixels = _mm512_loadu_ps(&img[ni * num_cols + nj]);
 							__m512 filterVal = _mm512_set1_ps(kernel[di + 1][dj + 1]);
 							sum = _mm512_fmadd_ps(pixels, filterVal, sum);
