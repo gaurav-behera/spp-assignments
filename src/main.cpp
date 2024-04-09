@@ -91,7 +91,7 @@ namespace solution
 							}
 						}
 					}
-					_mm512_storeu_ps(&result[j], sum);
+					_mm512_storeu_ps(&result[i*(num_cols)+j], sum);
 				}
 			}
 		}
