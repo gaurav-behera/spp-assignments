@@ -37,57 +37,37 @@ namespace solution
 		bitmap_fs.read(reinterpret_cast<char *>(img), sizeof(float) * num_rows * num_cols);
 		bitmap_fs.close();
 
-#pragma omp parallel num_threads(32)
+		set_num_threads(24);
+		#pragma omp parallel for collapse(2)
+		for (int i = 0; i < num_rows; ++i)
 		{
-			int thread_id = omp_get_thread_num();
-			int numa_node_id = thread_id % 2;
-
-			int cpu_id_within_node;
-			if (numa_node_id == 0)
-				cpu_id_within_node = thread_id / 2;
-			else
-				cpu_id_within_node = thread_id / 2 + 1;
-
-			cpu_set_t cpu_set;
-			CPU_ZERO(&cpu_set);
-			CPU_SET(cpu_id_within_node, &cpu_set);
-
-			sched_setaffinity(0, sizeof(cpu_set_t), &cpu_set);
-
-			int chunk_size = 1024;
-			int start_row = thread_id * chunk_size;
-			int end_row = start_row * chunk_size;
-
-			for (int i = start_row; i < end_row; ++i)
+			for (int j = 0; j < num_cols; j += 16)
 			{
-				for (int j = 0; j < num_cols; j += 16)
+				__m512 sum = _mm512_setzero_ps();
+				for (int di = -1; di <= 1; di++)
 				{
-					__m512 sum = _mm512_setzero_ps();
-					__m512 pixels, filterVal;
-					for (int di = -1; di <= 1; di++)
+					for (int dj = -1; dj <= 1; dj++)
 					{
-						int ni = i + di;
+						int ni = i + di, nj = j + dj;
+
 						if (ni >= 0 && ni < num_rows)
 						{
-							__mmask16 mask[3] = {0xFFFF, 0xFFFF, 0xFFFF};
-							if (j - 1 < 0)
-								mask[0] &= 0xFFFE;
-							if (j + 16 >= num_cols)
-								mask[2] &= 0x7FFF;
+							__mmask16 mask = 0xFFFF;
+							if (nj < 0)
+								mask &= 0xFFFE;
+							if (nj + 15 >= num_cols)
+								mask &= 0x7FFF;
 
-							for (int k = 0; k < 3; ++k)
-							{
-								pixels = _mm512_mask_loadu_ps(_mm512_setzero_ps(), mask[k], &img[ni * num_cols + j + k - 1]);
-								filterVal = _mm512_set1_ps(kernel[di + 1][k]);
-								sum = _mm512_fmadd_ps(pixels, filterVal, sum);
-							}
+							__m512 pixels = _mm512_mask_loadu_ps(_mm512_setzero_ps(), mask, &img[ni * num_cols + nj]);
+							__m512 filterVal = _mm512_set1_ps(kernel[di + 1][dj + 1]);
+							sum = _mm512_fmadd_ps(pixels, filterVal, sum);
 						}
 					}
-					_mm512_storeu_ps(&result[i * num_cols + j], sum);
 				}
+				_mm512_storeu_ps(&result[i * num_cols + j], sum);
 			}
 		}
-
+		
 		sol_fs.write(reinterpret_cast<const char *>(result), sizeof(float) * num_rows * num_cols);
 		sol_fs.close();
 		free(result);
