@@ -241,6 +241,7 @@ namespace solution
 						for (int dj = -1; dj <= 1; dj++)
 						{
 							int ni = i + di, nj = j + dj;
+							_mm_prefetch((const char*)&img[(ni + 1) * num_cols + nj], _MM_HINT_T2);
 							__m512 pixels = _mm512_loadu_ps(&img[ni * num_cols + nj]);
 							__m512 filterVal = _mm512_set1_ps(kernel[di + 1][dj + 1]);
 							sum = _mm512_fmadd_ps(pixels, filterVal, sum);
