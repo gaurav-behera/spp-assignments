@@ -27,7 +27,7 @@ namespace solution
 			return "";
 		}
 
-		void *img = reinterpret_cast<float *>(mmap(NULL, sizeof(float) * num_rows * num_cols, PROT_READ, MAP_PRIVATE, bitmap_fd, 0));
+		float *img = reinterpret_cast<float *>(mmap(NULL, sizeof(float) * num_rows * num_cols, PROT_READ, MAP_PRIVATE, bitmap_fd, 0));
 
 		int result_fd = open(sol_path.c_str(), O_CREAT | O_RDWR);
 		ftruncate(result_fd, sizeof(float) * num_rows * num_cols);
