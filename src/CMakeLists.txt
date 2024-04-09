@@ -7,4 +7,4 @@ if(OpenMP_CXX_FOUND)
     target_link_libraries(studentlib PRIVATE OpenMP::OpenMP_CXX)
 endif()
 
-target_compile_options(studentlib PRIVATE -Ofast -march=native -flto) 
+target_compile_options(studentlib PRIVATE -Ofast -march=native -flto -mavx512f -fno-math-errno -fassociative-math) 
