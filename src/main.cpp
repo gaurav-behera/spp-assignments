@@ -46,9 +46,9 @@ namespace solution
 							{
 								__mmask16 mask = 0xFFFF;
 								if (nj < 0)
-									mask = 0xFFFE;
+									mask &= 0xFFFE;
 								if (nj + 15 >= num_cols)
-									mask = 0x7FFF;
+									mask &= 0x7FFF;
 
 								__m512 pixels = _mm512_mask_loadu_ps(_mm512_setzero_ps(), mask, &img[ni * num_cols + nj]);
 								__m512 filterVal = _mm512_set1_ps(kernel[di + 1][dj + 1]);
