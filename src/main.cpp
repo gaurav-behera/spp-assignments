@@ -94,7 +94,7 @@ namespace solution
 						sum = _mm512_fmadd_ps(pixels, filterVal, sum);
 					}
 				}
-				_mm512_storeu_ps(&result[i * num_cols + j], sum);
+				_mm512_storeu_ps(&result[(i-1) * num_cols + (j-1)], sum);
 			}
 		}
 
