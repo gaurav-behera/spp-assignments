@@ -19,48 +19,18 @@ namespace solution
 	std::string compute(const std::string &bitmap_path, const float kernel[3][3], const std::int32_t num_rows, const std::int32_t num_cols)
 	{
 		std::string sol_path = std::filesystem::temp_directory_path() / "student_sol.bmp";
+		std::ofstream sol_fs(sol_path, std::ios::binary);
 
 		int bitmap_fd = open(bitmap_path.c_str(), O_RDONLY);
 		void *mapped_img = mmap(NULL, sizeof(float) * num_rows * num_cols, PROT_READ, MAP_PRIVATE, bitmap_fd, 0);
 		float *img = static_cast<float *>(mapped_img);
 
-		int result_fd = open(sol_path.c_str(), O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
-		
+		void *aligned_result;
+		posix_memalign(&aligned_result, 64, sizeof(float) * num_rows * num_cols);
+		float *result = static_cast<float *>(aligned_result);
 
-		void *mapped_result = mmap(NULL, sizeof(float) * num_rows * num_cols, PROT_WRITE | PROT_READ, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0);
-		float *result = static_cast<float *>(mapped_result);
-
-		// for (int i = 0; i < num_cols * num_rows; i++)
-		// {
-		// 	result[i] = img[i];
-		// }
-
-
-#pragma omp parallel
+#pragma omp parallel proc_bind(spread)
 		{
-			int tid = omp_get_thread_num();
-			int num_threads = omp_get_num_threads();
-			int node_cpus[] = {0, 1};	// CPU cores per NUMA node
-			int num_cpus_per_node = 24; // Number of CPU cores per NUMA node
-			int nodes = 2;				// Number of NUMA nodes
-
-			// Calculate loop iteration range for each thread based on NUMA node
-			int chunk_size = (num_rows - 2) / num_threads;
-			int start_i = 1 + tid * chunk_size;
-			int end_i = (tid == num_threads - 1) ? num_rows - 1 : start_i + chunk_size;
-
-			int node_id = tid % nodes;
-
-#pragma omp critical
-			{
-				cpu_set_t cpuset;
-				CPU_ZERO(&cpuset);
-				for (int i = 0; i < num_cpus_per_node; i++)
-				{
-					CPU_SET(node_cpus[node_id] + i, &cpuset);
-				}
-				sched_setaffinity(0, sizeof(cpu_set_t), &cpuset);
-			}
 #pragma omp single nowait
 			{
 #pragma omp task
@@ -236,8 +206,8 @@ namespace solution
 					_mm512_storeu_ps(&result[i * num_cols + j], sum);
 				}
 			}
-// #pragma omp for schedule(dynamic)
-			for (int i = start_i; i < end_i; ++i)
+#pragma omp for
+			for (int i = 1; i < num_rows - 1; ++i)
 			{
 				for (int j = 16; j < num_cols - 16; j += 16)
 				{
@@ -248,7 +218,7 @@ namespace solution
 						{
 							int ni = i + di;
 							int nj = j + dj;
-							// _mm_prefetch((const char *)&img[(ni + 1) * num_cols + nj], _MM_HINT_T2);
+							// _mm_prefetch((const char *)&img[ni * num_cols + nj+1], _MM_HINT_T2);
 							__m512 pixels = _mm512_loadu_ps(&img[ni * num_cols + nj]);
 							__m512 filterVal = _mm512_set1_ps(kernel[di + 1][dj + 1]);
 							sum = _mm512_fmadd_ps(pixels, filterVal, sum);
@@ -259,12 +229,12 @@ namespace solution
 			}
 			// std::cout << "done" << std::endl;
 		}
-		// sol_fs.write(reinterpret_cast<const char *>(result), sizeof(float) * num_rows * num_cols);
-		write(result_fd, result, num_cols*num_rows*sizeof(float));
+		sol_fs.write(reinterpret_cast<const char *>(result), sizeof(float) * num_rows * num_cols);
+		// write(result_fd, result, num_cols * num_rows * sizeof(float));
 		munmap(mapped_img, sizeof(float) * num_rows * num_cols);
-		munmap(mapped_result, sizeof(float) * num_rows * num_cols);
+		// munmap(mapped_result, sizeof(float) * num_rows * num_cols);
 		close(bitmap_fd);
-		close(result_fd);
+		// close(result_fd);
 
 		return sol_path;
 	}
