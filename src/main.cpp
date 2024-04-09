@@ -25,7 +25,7 @@ namespace solution
 		float *img = static_cast<float *>(mmap(NULL, sizeof(float) * size, PROT_READ, MAP_PRIVATE, bitmap_fd, 0));
 
 		int result_fd = open(sol_path.c_str(), O_CREAT | O_RDWR);
-		// ftruncate(result_fd, sizeof(float) * size);
+		ftruncate(result_fd, sizeof(float) * size);
 		float *result = reinterpret_cast<float *>(mmap(NULL, sizeof(float) * size, PROT_WRITE | PROT_READ, MAP_SHARED, result_fd, 0));
 
 #pragma omp parallel proc_bind(spread)
@@ -42,18 +42,15 @@ namespace solution
 					{
 						int ni = i + di, nj = j + dj;
 
-						if (ni >= 0 && ni < num_rows)
-						{
-							__mmask16 mask = 0xFFFF;
-							if (nj < 0)
-								mask &= 0xFFFE;
-							if (nj + 15 >= num_cols)
-								mask &= 0x7FFF;
+						__mmask16 mask = (ni >= 0 && ni < num_rows) ? 0xFFFF : 0x0000;
+						if (nj < 0)
+							mask &= 0xFFFE;
+						if (nj + 15 >= num_cols)
+							mask &= 0x7FFF;
 
-							__m512 pixels = _mm512_mask_loadu_ps(_mm512_setzero_ps(), mask, &img[ni * num_cols + nj]);
-							__m512 filterVal = _mm512_set1_ps(kernel[di + 1][dj + 1]);
-							sum = _mm512_fmadd_ps(pixels, filterVal, sum);
-						}
+						__m512 pixels = _mm512_mask_loadu_ps(_mm512_setzero_ps(), mask, &img[ni * num_cols + nj]);
+						__m512 filterVal = _mm512_set1_ps(kernel[di + 1][dj + 1]);
+						sum = _mm512_fmadd_ps(pixels, filterVal, sum);
 					}
 				}
 				_mm512_storeu_ps(&result[k], sum);
