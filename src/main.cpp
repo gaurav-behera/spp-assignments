@@ -28,10 +28,9 @@ namespace solution
 		ftruncate(result_fd, sizeof(float) * num_rows * num_cols);
 		float *result = reinterpret_cast<float *>(mmap(NULL, sizeof(float) * num_rows * num_cols, PROT_WRITE | PROT_READ, MAP_SHARED, result_fd, 0));
 
-// #pragma omp parallel schedule(dynamic)
-// #pragma omp single
+#pragma omp parallel
 		{
-#pragma omp parallel for collapse(2) schedule(dynamic)
+#pragma omp for collapse(2)
 			for (int i = 0; i < num_rows; ++i)
 			{
 				for (int j = 0; j < num_cols; j += 16)
@@ -57,7 +56,7 @@ namespace solution
 							}
 						}
 					}
-					_mm512_storeu_ps(&result[i*(num_cols)+j], sum);
+					_mm512_storeu_ps(&result[i * (num_cols) + j], sum);
 				}
 			}
 		}
