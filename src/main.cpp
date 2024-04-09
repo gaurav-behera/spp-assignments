@@ -30,7 +30,7 @@ namespace solution
 
 #pragma omp parallel proc_bind(close) 
 		{
-#pragma omp for collapse(2) schedule(dynamic)
+#pragma omp for schedule(dynamic)
 			for (int i = 0; i < num_rows; ++i)
 			{
 				for (int j = 0; j < num_cols; j += 16)
