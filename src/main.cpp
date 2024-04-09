@@ -12,39 +12,64 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/mman.h>
+#include <cstring>
 
 namespace solution
 {
 	std::string compute(const std::string &bitmap_path, const float kernel[3][3], const std::int32_t num_rows, const std::int32_t num_cols)
 	{
-		// int chunk_size = 32768;
+		std::string sol_path = "student_sol.bmp";
 
-		std::string sol_path = std::filesystem::temp_directory_path() / "student_sol.bmp";
-		std::ofstream sol_fs(sol_path, std::ios::binary);
-		// const auto img = std::make_unique<float[]>(num_rows * num_cols);
-		// void *aligned_img_ptr;
-		// if (posix_memalign(&aligned_img_ptr, 64, sizeof(float) * num_rows * num_cols) != 0)
-		// {
-		// 	throw std::bad_alloc();
-		// }
-		// float *img = static_cast<float *>(aligned_img_ptr);
-
-		void *aligned_result;
-		if (posix_memalign(&aligned_result, 64, sizeof(float) * num_rows * num_cols) != 0)
-		{
-			throw std::bad_alloc();
-		}
-		float *result = static_cast<float *>(aligned_result);
-
-		// mmap
 		int bitmap_fd = open(bitmap_path.c_str(), O_RDONLY);
+		if (bitmap_fd == -1)
+		{
+			std::cerr << "Failed to open bitmap file: " << std::endl;
+			return "";
+		}
+
 		void *mapped_img = mmap(NULL, sizeof(float) * num_rows * num_cols, PROT_READ, MAP_PRIVATE, bitmap_fd, 0);
+		if (mapped_img == MAP_FAILED)
+		{
+			std::cerr << "Failed to mmap bitmap file: " << std::endl;
+			close(bitmap_fd);
+			return "";
+		}
 		float *img = static_cast<float *>(mapped_img);
 
-		read(bitmap_fd, img, num_rows * num_cols * sizeof(float));
-		close(bitmap_fd);
+		int result_fd = open(sol_path.c_str(), O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
+		if (result_fd == -1)
+		{
+			std::cerr << "Failed to open result file: " << std::endl;
+			munmap(mapped_img, sizeof(float) * num_rows * num_cols);
+			close(bitmap_fd);
+			return "";
+		}
+		if (ftruncate(result_fd, sizeof(float) * num_rows * num_cols) == -1)
+		{
+			std::cerr << "Failed to set file size: " << std::endl;
+			close(result_fd);
+			return "";
+		}
 
-#pragma omp parallel num_threads(24)
+		void *mapped_result = mmap(NULL, sizeof(float) * num_rows * num_cols, PROT_WRITE | PROT_READ, MAP_SHARED, result_fd, 0);
+		if (mapped_result == MAP_FAILED)
+		{
+			// std::cerr << "Failed to mmap result file: " << std::endl;
+			std::cerr << "Failed to mmap result file: " << strerror(errno) << std::endl;
+			munmap(mapped_img, sizeof(float) * num_rows * num_cols);
+			close(bitmap_fd);
+			close(result_fd);
+			return "";
+		}
+		float *result = static_cast<float *>(mapped_result);
+
+		// for (int i = 0; i < num_cols * num_rows; i++)
+		// {
+		// 	result[i] = img[i];
+		// }
+
+
+#pragma omp parallel
 		{
 			int tid = omp_get_thread_num();
 			int num_threads = omp_get_num_threads();
@@ -267,11 +292,12 @@ namespace solution
 			}
 			// std::cout << "done" << std::endl;
 		}
-		sol_fs.write(reinterpret_cast<const char *>(result), sizeof(float) * num_rows * num_cols);
-		sol_fs.close();
+		// sol_fs.write(reinterpret_cast<const char *>(result), sizeof(float) * num_rows * num_cols);
 		munmap(mapped_img, sizeof(float) * num_rows * num_cols);
-		// munmap(mapped_result, sizeof(float) * num_rows * num_cols);
-		free(result);
+		munmap(mapped_result, sizeof(float) * num_rows * num_cols);
+		close(bitmap_fd);
+		close(result_fd);
+
 		return sol_path;
 	}
 }
