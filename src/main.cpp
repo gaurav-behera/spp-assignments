@@ -22,16 +22,16 @@ namespace solution
 
 		int bitmap_fd = open(bitmap_path.c_str(), O_RDONLY);
 
-		void *img = static_cast<float *>(mmap(NULL, sizeof(float) * num_rows * num_cols, PROT_READ, MAP_PRIVATE, bitmap_fd, 0));
+		float *img = static_cast<float *>(mmap(NULL, sizeof(float) * num_rows * num_cols, PROT_READ, MAP_PRIVATE, bitmap_fd, 0));
 
 		int result_fd = open(sol_path.c_str(), O_CREAT | O_RDWR);
 		ftruncate(result_fd, sizeof(float) * num_rows * num_cols);
 		float *result = reinterpret_cast<float *>(mmap(NULL, sizeof(float) * num_rows * num_cols, PROT_WRITE | PROT_READ, MAP_SHARED, result_fd, 0));
 
-#pragma omp parallel
-#pragma omp single
+// #pragma omp parallel schedule(dynamic)
+// #pragma omp single
 		{
-#pragma omp taskloop collapse(2)
+#pragma omp parallel for collapse(2) schedule(dynamic)
 			for (int i = 0; i < num_rows; ++i)
 			{
 				for (int j = 0; j < num_cols; j += 16)
