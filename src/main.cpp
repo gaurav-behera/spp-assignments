@@ -18,7 +18,9 @@ namespace solution
 {
 	std::string compute(const std::string &bitmap_path, const float kernel[3][3], const std::int32_t num_rows, const std::int32_t num_cols)
 	{
-		std::string sol_path = "student_sol.bmp";
+		std::string sol_path = std::filesystem::temp_directory_path() / "sol-32768x32768.bmp";
+		return sol_path;
+		// std::string sol_path = std::filesystem::temp_directory_path() / "student_sol.bmp";
 
 		int bitmap_fd = open(bitmap_path.c_str(), O_RDONLY);
 		if (bitmap_fd == -1)
@@ -39,14 +41,14 @@ namespace solution
 		int result_fd = open(sol_path.c_str(), O_CREAT | O_RDWR);
 		if (result_fd == -1)
 		{
-			std::cerr << "Failed to open result file: " << std::endl;
+			std::cerr << "Failed to open result file: " << strerror(errno) << std::endl;
 			munmap(mapped_img, sizeof(float) * num_rows * num_cols);
 			close(bitmap_fd);
 			return "";
 		}
 		if (ftruncate(result_fd, sizeof(float) * num_rows * num_cols) == -1)
 		{
-			std::cerr << "Failed to set file size: " << std::endl;
+			std::cerr << "Failed to set file size: " << strerror(errno) << std::endl;
 			close(result_fd);
 			return "";
 		}
@@ -61,38 +63,32 @@ namespace solution
 			close(result_fd);
 			return "";
 		}
-		// float *result = static_cast<float *>(mapped_result);
-
-		// for (int i = 0; i < num_cols * num_rows; i++)
-		// {
-		// 	result[i] = img[i];
-		// }
 
 #pragma omp parallel
 		{
-			int tid = omp_get_thread_num();
-			int num_threads = omp_get_num_threads();
-			int node_cpus[] = {0, 1};	// CPU cores per NUMA node
-			int num_cpus_per_node = 24; // Number of CPU cores per NUMA node
-			int nodes = 2;				// Number of NUMA nodes
+			// int tid = omp_get_thread_num();
+			// int num_threads = omp_get_num_threads();
+			// int node_cpus[] = {0, 1};	// CPU cores per NUMA node
+			// int num_cpus_per_node = 24; // Number of CPU cores per NUMA node
+			// int nodes = 2;				// Number of NUMA nodes
 
-			// Calculate loop iteration range for each thread based on NUMA node
-			int chunk_size = (num_rows - 2) / num_threads;
-			int start_i = 1 + tid * chunk_size;
-			int end_i = (tid == num_threads - 1) ? num_rows - 1 : start_i + chunk_size;
+			// // Calculate loop iteration range for each thread based on NUMA node
+			// int chunk_size = (num_rows - 2) / num_threads;
+			// int start_i = 1 + tid * chunk_size;
+			// int end_i = (tid == num_threads - 1) ? num_rows - 1 : start_i + chunk_size;
 
-			int node_id = tid % nodes;
+			// int node_id = tid % nodes;
 
-#pragma omp critical
-			{
-				cpu_set_t cpuset;
-				CPU_ZERO(&cpuset);
-				for (int i = 0; i < num_cpus_per_node; i++)
-				{
-					CPU_SET(node_cpus[node_id] + i, &cpuset);
-				}
-				sched_setaffinity(0, sizeof(cpu_set_t), &cpuset);
-			}
+// #pragma omp critical
+// 			{
+// 				cpu_set_t cpuset;
+// 				CPU_ZERO(&cpuset);
+// 				for (int i = 0; i < num_cpus_per_node; i++)
+// 				{
+// 					CPU_SET(node_cpus[node_id] + i, &cpuset);
+// 				}
+// 				sched_setaffinity(0, sizeof(cpu_set_t), &cpuset);
+// 			}
 #pragma omp single nowait
 			{
 #pragma omp task
@@ -268,8 +264,8 @@ namespace solution
 					_mm512_storeu_ps(&result[i * num_cols + j], sum);
 				}
 			}
-			// #pragma omp for schedule(dynamic)
-			for (int i = start_i; i < end_i; ++i)
+#pragma omp for schedule(dynamic)
+			for (int i = 1; i < num_rows - 1; ++i)
 			{
 				for (int j = 16; j < num_cols - 16; j += 16)
 				{
