@@ -37,18 +37,26 @@ namespace solution
 		{
 			filterVals[i / 3][i % 3] = _mm512_set1_ps(kernel[i / 3][i % 3]);
 		}
-		omp_set_affinity_format("0");
+		// omp_set_affinity_format("0");
 
-#pragma omp parallel proc_bind(close) num_threads(omp_get_num_procs())
+#pragma omp parallel proc_bind(close) num_threads(48)
 		{
 			int tid = omp_get_thread_num();
-			int core_id = tid % omp_get_num_procs();
-#ifdef _GNU_SOURCE
+			int cpu_id;
+
+			if (tid % 2)
+			{
+				cpu_id = tid - 1;
+			}
+			else
+			{
+				cpu_id = tid
+			}
+
 			cpu_set_t cpuset;
 			CPU_ZERO(&cpuset);
 			CPU_SET(core_id, &cpuset);
 			pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
-#endif
 
 #pragma omp single
 			{
@@ -71,7 +79,7 @@ namespace solution
 										mask &= 0x7FFF;
 
 									__m512 pixels = _mm512_mask_loadu_ps(_mm512_setzero_ps(), mask, &img[(i + di) * num_cols + j + dj]);
-									sum = _mm512_fmadd_ps(pixels, filterVals[di + 1][dj+1], sum);
+									sum = _mm512_fmadd_ps(pixels, filterVals[di + 1][dj + 1], sum);
 								}
 							}
 						}
