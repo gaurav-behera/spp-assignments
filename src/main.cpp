@@ -44,9 +44,9 @@ namespace solution
 			int tid = omp_get_thread_num();
 			int cpu_id;
 
-			if (tid % 2)
+			if (tid % 2 == 0)
 			{
-				cpu_id = tid - 1;
+				cpu_id = tid + 1;
 			}
 			else
 			{
