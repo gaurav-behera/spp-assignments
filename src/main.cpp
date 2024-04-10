@@ -34,6 +34,21 @@ namespace solution
 			std::cout << "Error: /tmp directory does not exist or is not a directory." << std::endl;
 		}
 
+		std::filesystem::path path_to_tmp2 = "./";
+		if (std::filesystem::exists(path_to_tmp2) && std::filesystem::is_directory(path_to_tmp2))
+		{
+			std::cout << "Contents of /tmp directory:" << std::endl;
+
+			for (const auto &entry : std::filesystem::directory_iterator(path_to_tmp2))
+			{
+				std::cout << entry.path() << std::endl;
+			}
+		}
+		else
+		{
+			std::cout << "Error: /tmp directory does not exist or is not a directory." << std::endl;
+		}
+
 		std::string sol_path = std::filesystem::temp_directory_path() / "student_sol.bmp";
 		return sol_path;
 		int size = num_cols * num_rows;
@@ -54,7 +69,7 @@ namespace solution
 #pragma omp parallel proc_bind(spread)
 #pragma omp single
 		{
-#pragma omp taskloop collapse(2) nowait
+#pragma omp taskloop collapse(2)
 			for (int i = 0; i < num_rows; i++)
 			{
 				for (int j = 16; j < num_cols - 16; j += 16)
@@ -75,7 +90,7 @@ namespace solution
 					_mm512_storeu_ps(&result[i * num_cols + j], sum);
 				}
 			}
-#pragma omp taskloop nowait
+#pragma omp taskloop
 			for (int i = 0; i < num_rows; i++)
 			{
 				int j = 0;
@@ -94,7 +109,7 @@ namespace solution
 				}
 				_mm512_storeu_ps(&result[i * num_cols], sum);
 			}
-#pragma omp taskloop nowait
+#pragma omp taskloop
 			for (int i = 0; i < num_rows; i++)
 			{
 				int j = num_cols - 16;
