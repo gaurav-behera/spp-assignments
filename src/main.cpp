@@ -56,7 +56,7 @@ namespace solution
 							}
 						}
 					}
-					_mm512_storeu_ps(&result[k], sum);
+					_mm512_storeu_ps(&result[i*num_cols+j], sum);
 				}
 			}
 #pragma omp taskloop nowait
