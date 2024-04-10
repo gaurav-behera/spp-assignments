@@ -39,14 +39,14 @@ namespace solution
 		}
 		// omp_set_affinity_format("0");
 
-#pragma omp parallel proc_bind(close) num_threads(48)
+#pragma omp parallel proc_bind(spread) num_threads(48)
 		{
 			int tid = omp_get_thread_num();
 			int cpu_id;
 
-			if (tid % 2 == 0)
+			if (tid % 2)
 			{
-				cpu_id = tid + 1;
+				cpu_id = tid - 1;
 			}
 			else
 			{
