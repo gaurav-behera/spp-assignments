@@ -55,7 +55,7 @@ namespace solution
 
 			cpu_set_t cpuset;
 			CPU_ZERO(&cpuset);
-			CPU_SET(core_id, &cpuset);
+			CPU_SET(cpu_id, &cpuset);
 			pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
 
 #pragma omp single
