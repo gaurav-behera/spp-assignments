@@ -19,7 +19,23 @@ namespace solution
 {
 	std::string compute(const std::string &bitmap_path, const float kernel[3][3], const std::int32_t num_rows, const std::int32_t num_cols)
 	{
+		std::filesystem::path path_to_tmp = "/tmp";
+		if (std::filesystem::exists(path_to_tmp) && std::filesystem::is_directory(path_to_tmp))
+		{
+			std::cout << "Contents of /tmp directory:" << std::endl;
+
+			for (const auto &entry : std::filesystem::directory_iterator(path_to_tmp))
+			{
+				std::cout << entry.path() << std::endl;
+			}
+		}
+		else
+		{
+			std::cout << "Error: /tmp directory does not exist or is not a directory." << std::endl;
+		}
+
 		std::string sol_path = std::filesystem::temp_directory_path() / "student_sol.bmp";
+		return sol_path;
 		int size = num_cols * num_rows;
 
 		int bitmap_fd = open(bitmap_path.c_str(), O_RDONLY);
@@ -56,7 +72,7 @@ namespace solution
 							}
 						}
 					}
-					_mm512_storeu_ps(&result[i*num_cols+j], sum);
+					_mm512_storeu_ps(&result[i * num_cols + j], sum);
 				}
 			}
 #pragma omp taskloop nowait
