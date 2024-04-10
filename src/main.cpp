@@ -41,7 +41,7 @@ namespace solution
 #pragma omp taskloop collapse(2)
 			for (int i = 0; i < num_rows; i++)
 			{
-				for (int j = 0; j < num_cols - 16; j += 16)
+				for (int j = 16; j < num_cols - 16; j += 16)
 				{
 					__m512 sum = _mm512_setzero_ps();
 					for (int di = -1; di <= 1; di++)
