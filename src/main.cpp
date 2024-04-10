@@ -35,8 +35,9 @@ namespace solution
 		{
 			filterVals[i / 3][i % 3] = _mm512_set1_ps(kernel[i / 3][i % 3]);
 		}
+		omp_set_affinity_format("0");
 
-#pragma omp parallel proc_bind(spread)
+#pragma omp parallel proc_bind(close)
 #pragma omp single
 		{
 #pragma omp taskloop collapse(2)
@@ -52,7 +53,13 @@ namespace solution
 							int ni = i + di, nj = j + dj;
 							if (ni >= 0 && ni < num_rows)
 							{
-								__m512 pixels = _mm512_mask_loadu_ps(_mm512_setzero_ps(), 0xFFFF, &img[ni * num_cols + nj]);
+								__mmask16 mask = 0xFFFF;
+								if (nj < 0)
+									mask &= 0xFFFE;
+								if (nj + 15 >= num_cols)
+									mask &= 0x7FFF;
+
+								__m512 pixels = _mm512_mask_loadu_ps(_mm512_setzero_ps(), mask, &img[ni * num_cols + nj]);
 								sum = _mm512_fmadd_ps(pixels, filterVals[di + 1][dj + 1], sum);
 							}
 						}
@@ -60,45 +67,7 @@ namespace solution
 					_mm512_storeu_ps(&result[i * num_cols + j], sum);
 				}
 			}
-#pragma omp taskloop
-			for (int i = 0; i < num_rows; i++)
-			{
-				int j = 0;
-				__m512 sum = _mm512_setzero_ps();
-				for (int di = -1; di <= 1; di++)
-				{
-					for (int dj = -1; dj <= 1; dj++)
-					{
-						int ni = i + di, nj = j + dj;
-						if (ni >= 0 && ni < num_rows)
-						{
-							__m512 pixels = _mm512_mask_loadu_ps(_mm512_setzero_ps(), 0xFFFE, &img[ni * num_cols + nj]);
-							sum = _mm512_fmadd_ps(pixels, filterVals[di + 1][dj + 1], sum);
-						}
-					}
-				}
-				_mm512_storeu_ps(&result[i * num_cols], sum);
-			}
-#pragma omp taskloop
-			for (int i = 0; i < num_rows; i++)
-			{
-				int j = num_cols - 16;
-				__m512 sum = _mm512_setzero_ps();
-				for (int di = -1; di <= 1; di++)
-				{
-					for (int dj = -1; dj <= 1; dj++)
-					{
-						int ni = i + di, nj = j + dj;
-						if (ni >= 0 && ni < num_rows)
-						{
-							__m512 pixels = _mm512_mask_loadu_ps(_mm512_setzero_ps(), 0x7FFF, &img[ni * num_cols + nj]);
-							sum = _mm512_fmadd_ps(pixels, filterVals[di + 1][dj + 1], sum);
-						}
-					}
-				}
-				_mm512_storeu_ps(&result[i * num_cols + j], sum);
-			}
+			return sol_path;
 		}
-		return sol_path;
 	}
 }
