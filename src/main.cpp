@@ -1,5 +1,4 @@
 #pragma GCC optimize("O3,unroll-loops")
-#pragma GCC target("avx2,bmi,bmi2,lzcnt,popcnt")
 #pragma GCC target("avx2,bmi,bmi2,lzcnt,popcnt,avx512f")
 #include <iostream>
 #include <fstream>
@@ -33,7 +32,7 @@ namespace solution
 		float *result = reinterpret_cast<float *>(mmap(NULL, sizeof(float) * size, PROT_WRITE | PROT_READ, MAP_SHARED, result_fd, 0));
 
 		__m512 filterVals[3][3];
-#pragma omp parallel for num_threads(9)
+		// #pragma omp parallel for num_threads(9)
 		for (int i = 0; i < 9; i++)
 		{
 			filterVals[i / 3][i % 3] = _mm512_set1_ps(kernel[i / 3][i % 3]);
@@ -59,11 +58,12 @@ namespace solution
 					for (int j = 0; j < num_cols; j += 16)
 					{
 						__m512 sum = _mm512_setzero_ps();
+#pragma omp parallel for collapse(2) shared(sum) num_threads(9)
 						for (int di = -1; di <= 1; di++)
 						{
-							if (i + di >= 0 && i + di < num_rows)
+							for (int dj = -1; dj <= 1; dj++)
 							{
-								for (int dj = -1; dj <= 1; dj++)
+								if (i + di >= 0 && i + di < num_rows)
 								{
 									__mmask16 mask = 0xFFFF;
 									if (j + dj < 0)
