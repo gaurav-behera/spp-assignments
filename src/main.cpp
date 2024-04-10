@@ -50,9 +50,9 @@ namespace solution
 			CPU_SET(cpu_id, &cpuset);
 			pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
 
-// #pragma omp single
+#pragma omp single
 			{
-#pragma omp for
+#pragma omp taskloop collapse(2)
 				for (int k = 0; k < size; k += 16)
 				{
 					int i = k / num_cols, j = k % num_cols;
