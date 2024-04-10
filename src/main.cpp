@@ -29,22 +29,40 @@ namespace solution
 		ftruncate(result_fd, sizeof(float) * size);
 		float *result = reinterpret_cast<float *>(mmap(NULL, sizeof(float) * size, PROT_WRITE | PROT_READ, MAP_SHARED, result_fd, 0));
 
-		
 		__m512 filterVals[3][3];
 		for (int i = 0; i < 9; i++)
 		{
-			filterVals[i/3][i%3] = _mm512_set1_ps(kernel[i/3][i%3]);
+			filterVals[i / 3][i % 3] = _mm512_set1_ps(kernel[i / 3][i % 3]);
 		}
-		
-		__m512 zero_vec = _mm512_setzero_ps();
 
 #pragma omp parallel proc_bind(spread)
 #pragma omp single
 		{
-#pragma omp taskloop
-			for (int k = 0; k < size; k += 16)
+#pragma omp taskloop collapse(2)
+			for (int i = 0; i < num_rows; i++)
 			{
-				int i = k / num_cols, j = k % num_cols;
+				for (int j = 0; j < num_cols - 16; j += 16)
+				{
+					__m512 sum = _mm512_setzero_ps();
+					for (int di = -1; di <= 1; di++)
+					{
+						for (int dj = -1; dj <= 1; dj++)
+						{
+							int ni = i + di, nj = j + dj;
+							if (ni >= 0 && ni < num_rows)
+							{
+								__m512 pixels = _mm512_mask_loadu_ps(_mm512_setzero_ps(), 0xFFFF, &img[ni * num_cols + nj]);
+								sum = _mm512_fmadd_ps(pixels, filterVals[di + 1][dj + 1], sum);
+							}
+						}
+					}
+					_mm512_storeu_ps(&result[k], sum);
+				}
+			}
+#pragma omp taskloop
+			for (int i = 0; i < num_rows; i++)
+			{
+				int j = 0;
 				__m512 sum = _mm512_setzero_ps();
 				for (int di = -1; di <= 1; di++)
 				{
@@ -53,18 +71,31 @@ namespace solution
 						int ni = i + di, nj = j + dj;
 						if (ni >= 0 && ni < num_rows)
 						{
-							__mmask16 mask = 0xFFFF;
-							if (nj < 0)
-								mask &= 0xFFFE;
-							if (nj + 15 >= num_cols)
-								mask &= 0x7FFF;
-
-							__m512 pixels = _mm512_mask_loadu_ps(_mm512_setzero_ps(), mask, &img[ni * num_cols + nj]);
-							sum = _mm512_fmadd_ps(pixels, filterVals[di+1][dj+1], sum);
+							__m512 pixels = _mm512_mask_loadu_ps(_mm512_setzero_ps(), 0xFFFE, &img[ni * num_cols + nj]);
+							sum = _mm512_fmadd_ps(pixels, filterVals[di + 1][dj + 1], sum);
 						}
 					}
 				}
-				_mm512_storeu_ps(&result[k], sum);
+				_mm512_storeu_ps(&result[i * num_cols], sum);
+			}
+#pragma omp taskloop
+			for (int i = 0; i < num_rows; i++)
+			{
+				int j = num_cols - 16;
+				__m512 sum = _mm512_setzero_ps();
+				for (int di = -1; di <= 1; di++)
+				{
+					for (int dj = -1; dj <= 1; dj++)
+					{
+						int ni = i + di, nj = j + dj;
+						if (ni >= 0 && ni < num_rows)
+						{
+							__m512 pixels = _mm512_mask_loadu_ps(_mm512_setzero_ps(), 0x7FFF, &img[ni * num_cols + nj]);
+							sum = _mm512_fmadd_ps(pixels, filterVals[di + 1][dj + 1], sum);
+						}
+					}
+				}
+				_mm512_storeu_ps(&result[i * num_cols + j], sum);
 			}
 		}
 		return sol_path;
