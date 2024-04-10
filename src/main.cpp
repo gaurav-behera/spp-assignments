@@ -60,7 +60,7 @@ namespace solution
 
 #pragma omp single
 			{
-#pragma omp taskloop collapse(2)
+#pragma omp taskloop
 				for (int i = 0; i < num_rows; i++)
 				{
 					for (int j = 0; j < num_cols; j += 16)
