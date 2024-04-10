@@ -51,7 +51,10 @@ namespace solution
 							if (nj + 15 >= num_cols)
 								mask &= 0x7FFF;
 
-							__m512 pixels = _mm512_mask_loadu_ps(_mm512_setzero_ps(), mask, &img[ni * num_cols + nj]);
+							__m512 pixels = _mm512_loadu_ps(&img[ni * num_cols]);
+							pixels = _mm512_mask_blend_ps(mask, pixels, _mm512_setzero_ps());
+
+							// __m512 pixels = _mm512_mask_loadu_ps(_mm512_setzero_ps(), mask, &img[ni * num_cols + nj]);
 							__m512 filterVal = _mm512_set1_ps(kernel[di + 1][dj + 1]);
 							sum = _mm512_fmadd_ps(pixels, filterVal, sum);
 						}
