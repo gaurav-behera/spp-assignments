@@ -27,10 +27,11 @@ namespace solution
         ftruncate(result_fd, sizeof(float) * size);
         float *result = reinterpret_cast<float *>(mmap(NULL, sizeof(float) * size, PROT_WRITE | PROT_READ, MAP_SHARED, result_fd, 0));
 
-        __m512bh filterVals[3][3];
+        // Convert kernel to half-precision floats
+        __m512h filterVals[3][3];
         for (int i = 0; i < 9; i++)
         {
-            filterVals[i / 3][i % 3] = _mm512_set1_bh(kernel[i / 3][i % 3]);
+            filterVals[i / 3][i % 3] = _mm512_set1_ph(kernel[i / 3][i % 3]);
         }
 
         omp_set_affinity_format("0");
@@ -43,7 +44,7 @@ namespace solution
             {
                 for (int j = 0; j < num_cols; j += 16)
                 {
-                    __m512bh sum = _mm512_setzero_bh();
+                    __m512h sum = _mm512_setzero_ph();
                     for (int di = -1; di <= 1; di++)
                     {
                         if (i + di >= 0 && i + di < num_rows)
@@ -56,11 +57,13 @@ namespace solution
                                 if (j + dj + 15 >= num_cols)
                                     mask &= 0x7FFF;
 
-                                __m512bh pixels = _mm512_mask_loadu_ps(_mm512_setzero_bh(), mask, &img[(i + di) * num_cols + j + dj]);
+                                // Load half-precision floats
+                                __m512h pixels = _mm512_mask_loadu_ps(_mm512_setzero_ph(), mask, &img[(i + di) * num_cols + j + dj]);
                                 sum = _mm512_fmadd_ps(pixels, filterVals[di + 1][+1], sum);
                             }
                         }
                     }
+                    // Store half-precision floats
                     _mm512_storeu_ps(&result[i * num_cols + j], sum);
                 }
             }
