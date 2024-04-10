@@ -1,5 +1,5 @@
 #pragma GCC optimize("O3,unroll-loops")
-// #pragma GCC target("avx2,bmi,bmi2,lzcnt,popcnt")
+#pragma GCC target("avx2,bmi,bmi2,lzcnt,popcnt")
 #pragma GCC target("avx2,bmi,bmi2,lzcnt,popcnt,avx512f")
 #include <iostream>
 #include <fstream>
@@ -61,9 +61,9 @@ namespace solution
 						__m512 sum = _mm512_setzero_ps();
 						for (int di = -1; di <= 1; di++)
 						{
-							for (int dj = -1; dj <= 1; dj++)
+							if (i + di >= 0 && i + di < num_rows)
 							{
-								if (i + di >= 0 && i + di < num_rows)
+								for (int dj = -1; dj <= 1; dj++)
 								{
 									__mmask16 mask = 0xFFFF;
 									if (j + dj < 0)
