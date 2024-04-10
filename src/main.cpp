@@ -14,6 +14,8 @@
 #include <fcntl.h>
 #include <sys/mman.h>
 #include <cstring>
+#include <pthread.h>
+#include <sched.h>
 
 namespace solution
 {
@@ -37,37 +39,48 @@ namespace solution
 		}
 		omp_set_affinity_format("0");
 
-#pragma omp parallel proc_bind(close)
-#pragma omp single
+#pragma omp parallel proc_bind(close) num_threads(omp_get_num_procs())
 		{
-#pragma omp taskloop collapse(2)
-			for (int i = 0; i < num_rows; i++)
-			{
-				for (int j = 0; j < num_cols; j += 16)
-				{
-					__m512 sum = _mm512_setzero_ps();
-					for (int di = -1; di <= 1; di++)
-					{
-						#pragma omp simd collapse(2)
-						if (i + di >= 0 && i + di < num_rows)
-						{
-							for (int dj = -1; dj <= 1; dj++)
-							{
-								__mmask16 mask = 0xFFFF;
-								if (j + dj < 0)
-									mask &= 0xFFFE;
-								if (j + dj + 15 >= num_cols)
-									mask &= 0x7FFF;
+			int tid = omp_get_thread_num();
+			int core_id = tid % omp_get_num_procs();
+#ifdef _GNU_SOURCE
+			cpu_set_t cpuset;
+			CPU_ZERO(&cpuset);
+			CPU_SET(core_id, &cpuset);
+			pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
+#endif
 
-								__m512 pixels = _mm512_mask_loadu_ps(_mm512_setzero_ps(), mask, &img[(i + di) * num_cols + j + dj]);
-								sum = _mm512_fmadd_ps(pixels, filterVals[di + 1][+1], sum);
+#pragma omp single
+			{
+#pragma omp taskloop collapse(2)
+				for (int i = 0; i < num_rows; i++)
+				{
+					for (int j = 0; j < num_cols; j += 16)
+					{
+						__m512 sum = _mm512_setzero_ps();
+						for (int di = -1; di <= 1; di++)
+						{
+							if (i + di >= 0 && i + di < num_rows)
+							{
+								for (int dj = -1; dj <= 1; dj++)
+								{
+									__mmask16 mask = 0xFFFF;
+									if (j + dj < 0)
+										mask &= 0xFFFE;
+									if (j + dj + 15 >= num_cols)
+										mask &= 0x7FFF;
+
+									__m512 pixels = _mm512_mask_loadu_ps(_mm512_setzero_ps(), mask, &img[(i + di) * num_cols + j + dj]);
+									sum = _mm512_fmadd_ps(pixels, filterVals[di + 1][dj+1], sum);
+								}
 							}
 						}
+						_mm512_storeu_ps(&result[i * num_cols + j], sum);
 					}
-					_mm512_storeu_ps(&result[i * num_cols + j], sum);
 				}
 			}
 		}
+
 		return sol_path;
 	}
 }
