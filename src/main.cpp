@@ -29,6 +29,13 @@ namespace solution
 		ftruncate(result_fd, sizeof(float) * size);
 		float *result = reinterpret_cast<float *>(mmap(NULL, sizeof(float) * size, PROT_WRITE | PROT_READ, MAP_SHARED, result_fd, 0));
 
+		
+		__m512 filterVals[3][3];
+		for (int i = 0; i < 9; i++)
+		{
+			filterVals[i/3][i%3] = _mm512_set1_ps(kernel[i/3][i%3]);
+		}
+		
 		__m512 zero_vec = _mm512_setzero_ps();
 
 #pragma omp parallel proc_bind(spread)
@@ -46,13 +53,14 @@ namespace solution
 						int ni = i + di, nj = j + dj;
 						if (ni >= 0 && ni < num_rows)
 						{
-							__m512 pixels = _mm512_loadu_ps(&img[ni * num_cols + nj]);
-							__m512 filterVal = _mm512_set1_ps(kernel[di + 1][dj + 1]);
-							// if (nj < 0)
-							// 	filterVal = _mm512_mask_blend_ps(32767, filterVal, zero_vec);
-							// else if (nj + 15 >= num_cols)
-							// 	filterVal = _mm512_mask_blend_ps(65534, filterVal, zero_vec);
-							sum = _mm512_fmadd_ps(pixels, filterVal, sum);
+							__mmask16 mask = 0xFFFF;
+							if (nj < 0)
+								mask &= 0xFFFE;
+							if (nj + 15 >= num_cols)
+								mask &= 0x7FFF;
+
+							__m512 pixels = _mm512_mask_loadu_ps(_mm512_setzero_ps(), mask, &img[ni * num_cols + nj]);
+							sum = _mm512_fmadd_ps(pixels, filterVals[di+1][dj+1], sum);
 						}
 					}
 				}
