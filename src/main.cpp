@@ -45,14 +45,14 @@ namespace solution
 
 						if (ni >= 0 && ni < num_rows)
 						{
-							__mmask16 mask = 0xFFFF;
+							__mmask16 mask = 65535;
 							if (nj < 0)
-								mask &= 0xFFFE;
+								mask = 32767;
 							if (nj + 15 >= num_cols)
-								mask &= 0x7FFF;
+								mask = 65534;
 
-							__m512 pixels = _mm512_loadu_ps(&img[ni * num_cols]);
-							pixels = _mm512_mask_blend_ps(mask, pixels, _mm512_setzero_ps());
+							__m512 pixels = _mm512_loadu_ps(&img[ni * num_cols + nj]);
+							pixels = _mm512_mask_blend_ps(pixels, _mm512_setzero_ps(), mask);
 
 							// __m512 pixels = _mm512_mask_loadu_ps(_mm512_setzero_ps(), mask, &img[ni * num_cols + nj]);
 							__m512 filterVal = _mm512_set1_ps(kernel[di + 1][dj + 1]);
