@@ -44,16 +44,14 @@ namespace solution
 					for (int dj = -1; dj <= 1; dj++)
 					{
 						int ni = i + di, nj = j + dj;
-
 						if (ni >= 0 && ni < num_rows)
 						{
 							__m512 pixels = _mm512_loadu_ps(&img[ni * num_cols + nj]);
-							if (nj < 0)
-								pixels = _mm512_mask_blend_ps(32767, pixels,zero_vec);
-							else if (nj + 15 >= num_cols)
-								pixels = _mm512_mask_blend_ps(65534, pixels,zero_vec);
-
 							__m512 filterVal = _mm512_set1_ps(kernel[di + 1][dj + 1]);
+							if (nj < 0)
+								filterVal = _mm512_mask_blend_ps(32767, filterVal, zero_vec);
+							else if (nj + 15 >= num_cols)
+								filterVal = _mm512_mask_blend_ps(65534, filterVal, zero_vec);
 							sum = _mm512_fmadd_ps(pixels, filterVal, sum);
 						}
 					}
