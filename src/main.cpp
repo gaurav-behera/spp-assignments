@@ -52,31 +52,29 @@ namespace solution
 
 #pragma omp single
 			{
-#pragma omp taskloop collapse(2)
-				for (int i = 0; i < num_rows; i++)
+#pragma omp taskloop
+				for (int k = 0; k < size; k += 16)
 				{
-					for (int j = 0; j < num_cols; j += 16)
+					int i = k / num_cols, j = k % num_cols;
+					__m512 sum = _mm512_setzero_ps();
+					for (int di = -1; di <= 1; di++)
 					{
-						__m512 sum = _mm512_setzero_ps();
-						for (int di = -1; di <= 1; di++)
+						if (i + di >= 0 && i + di < num_rows)
 						{
-							if (i + di >= 0 && i + di < num_rows)
+							for (int dj = -1; dj <= 1; dj++)
 							{
-								for (int dj = -1; dj <= 1; dj++)
-								{
-									__mmask16 mask = 0xFFFF;
-									if (j + dj < 0)
-										mask &= 0xFFFE;
-									if (j + dj + 15 >= num_cols)
-										mask &= 0x7FFF;
+								__mmask16 mask = 0xFFFF;
+								if (j + dj < 0)
+									mask &= 0xFFFE;
+								if (j + dj + 15 >= num_cols)
+									mask &= 0x7FFF;
 
-									__m512 pixels = _mm512_mask_loadu_ps(_mm512_setzero_ps(), mask, &img[(i + di) * num_cols + j + dj]);
-									sum = _mm512_fmadd_ps(pixels, filterVals[di + 1][dj + 1], sum);
-								}
+								__m512 pixels = _mm512_mask_loadu_ps(_mm512_setzero_ps(), mask, &img[(i + di) * num_cols + j + dj]);
+								sum = _mm512_fmadd_ps(pixels, filterVals[di + 1][dj + 1], sum);
 							}
 						}
-						_mm512_storeu_ps(&result[i * num_cols + j], sum);
 					}
+					_mm512_storeu_ps(&result[i * num_cols + j], sum);
 				}
 			}
 		}
