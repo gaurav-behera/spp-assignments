@@ -33,6 +33,7 @@ namespace solution
 		float *result = reinterpret_cast<float *>(mmap(NULL, sizeof(float) * size, PROT_WRITE | PROT_READ, MAP_SHARED, result_fd, 0));
 
 		__m512 filterVals[3][3];
+#pragma omp parallel for num_threads(9)
 		for (int i = 0; i < 9; i++)
 		{
 			filterVals[i / 3][i % 3] = _mm512_set1_ps(kernel[i / 3][i % 3]);
