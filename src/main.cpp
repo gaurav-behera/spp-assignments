@@ -50,7 +50,7 @@ namespace solution
 			}
 			else
 			{
-				cpu_id = tid
+				cpu_id = tid;
 			}
 
 			cpu_set_t cpuset;
