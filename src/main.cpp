@@ -37,21 +37,13 @@ namespace solution
 		{
 			filterVals[i / 3][i % 3] = _mm512_set1_ps(kernel[i / 3][i % 3]);
 		}
-		omp_set_affinity_format("0");
 
-#pragma omp parallel proc_bind(close) num_threads(48)
+#pragma omp parallel proc_bind(close) num_threads(24)
 		{
 			int tid = omp_get_thread_num();
 			int cpu_id;
 
-			if (tid % 2)
-			{
-				cpu_id = tid - 1;
-			}
-			else
-			{
-				cpu_id = tid;
-			}
+			cpu_id = tid * 2;
 
 			cpu_set_t cpuset;
 			CPU_ZERO(&cpuset);
