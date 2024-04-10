@@ -38,7 +38,7 @@ namespace solution
 #pragma omp parallel proc_bind(spread)
 #pragma omp single
 		{
-#pragma omp taskloop collapse(2)
+#pragma omp taskloop collapse(2) nowait
 			for (int i = 0; i < num_rows; i++)
 			{
 				for (int j = 16; j < num_cols - 16; j += 16)
@@ -59,7 +59,7 @@ namespace solution
 					_mm512_storeu_ps(&result[k], sum);
 				}
 			}
-#pragma omp taskloop
+#pragma omp taskloop nowait
 			for (int i = 0; i < num_rows; i++)
 			{
 				int j = 0;
@@ -78,7 +78,7 @@ namespace solution
 				}
 				_mm512_storeu_ps(&result[i * num_cols], sum);
 			}
-#pragma omp taskloop
+#pragma omp taskloop nowait
 			for (int i = 0; i < num_rows; i++)
 			{
 				int j = num_cols - 16;
