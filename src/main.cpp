@@ -58,7 +58,6 @@ namespace solution
 					for (int j = 0; j < num_cols; j += 16)
 					{
 						__m512 sum = _mm512_setzero_ps();
-#pragma omp parallel for collapse(2) shared(sum) num_threads(9)
 						for (int di = -1; di <= 1; di++)
 						{
 							for (int dj = -1; dj <= 1; dj++)
