@@ -168,13 +168,11 @@ namespace solution
 								sum = _mm512_fmadd_ps(pixels, filterVals[di + 1][dj + 1], sum);
 							}
 						}
+						_mm512_storeu_ps(&result[i * num_cols + j], sum);
 					}
-					_mm512_storeu_ps(&result[i * num_cols + j], sum);
 				}
 			}
 		}
+		return sol_path;
 	}
-
-	return sol_path;
-}
 }
