@@ -58,11 +58,78 @@ namespace solution
 			CPU_SET(cpu_id, &cpuset);
 			pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
 
-// #pragma omp single
+#pragma omp single
 			{
-#pragma omp for collapse(2)
+#pragma omp taskloop
 				for (int i = 0; i < num_rows; i++)
 				{
+					if (i == 0)
+					{
+						for (int j = 0; j < num_cols; j += 16)
+						{
+							__m512 sum = _mm512_setzero_ps();
+							for (int di = 0; di <= 1; di++)
+							{
+								for (int dj = -1; dj <= 1; dj++)
+								{
+									__mmask16 mask = 0xFFFF;
+									if (j + dj < 0)
+										mask &= 0xFFFE;
+									if (j + dj + 15 >= num_cols)
+										mask &= 0x7FFF;
+
+									__m512 pixels = _mm512_mask_loadu_ps(_mm512_setzero_ps(), mask, &img[(i + di) * num_cols + j + dj]);
+									sum = _mm512_fmadd_ps(pixels, filterVals[di + 1][dj + 1], sum);
+								}
+							}
+							_mm512_storeu_ps(&result[i * num_cols + j], sum);
+						}
+					}
+					else if (i == (num_rows - 1))
+					{
+						for (int j = 0; j < num_cols; j += 16)
+						{
+							__m512 sum = _mm512_setzero_ps();
+							for (int di = -1; di <= 0; di++)
+							{
+								for (int dj = -1; dj <= 1; dj++)
+								{
+									__mmask16 mask = 0xFFFF;
+									if (j + dj < 0)
+										mask &= 0xFFFE;
+									if (j + dj + 15 >= num_cols)
+										mask &= 0x7FFF;
+
+									__m512 pixels = _mm512_mask_loadu_ps(_mm512_setzero_ps(), mask, &img[(i + di) * num_cols + j + dj]);
+									sum = _mm512_fmadd_ps(pixels, filterVals[di + 1][dj + 1], sum);
+								}
+							}
+							_mm512_storeu_ps(&result[i * num_cols + j], sum);
+						}
+					}
+					else
+					{
+						for (int j = 0; j < num_cols; j += (num_cols - 16))
+						{
+							__m512 sum = _mm512_setzero_ps();
+							for (int di = 0; di <= 1; di++)
+							{
+								for (int dj = -1; dj <= 1; dj++)
+								{
+									__mmask16 mask = 0xFFFF;
+									if (j + dj < 0)
+										mask &= 0xFFFE;
+									if (j + dj + 15 >= num_cols)
+										mask &= 0x7FFF;
+
+									__m512 pixels = _mm512_mask_loadu_ps(_mm512_setzero_ps(), mask, &img[(i + di) * num_cols + j + dj]);
+									sum = _mm512_fmadd_ps(pixels, filterVals[di + 1][dj + 1], sum);
+								}
+							}
+							_mm512_storeu_ps(&result[i * num_cols + j], sum);
+						}
+					}
+
 					for (int j = 0; j < num_cols; j += 16)
 					{
 						__m512 sum = _mm512_setzero_ps();
@@ -86,9 +153,28 @@ namespace solution
 						_mm512_storeu_ps(&result[i * num_cols + j], sum);
 					}
 				}
+
+#pragma omp taskloop collapse(2)
+				for (int i = 1; i < num_rows - 1; i++)
+				{
+					for (int j = 16; j < num_cols - 16; j += 16)
+					{
+						__m512 sum = _mm512_setzero_ps();
+						for (int di = -1; di <= 1; di++)
+						{
+							for (int dj = -1; dj <= 1; dj++)
+							{
+								__m512 pixels = _mm512_loadu_ps(&img[(i + di) * num_cols + j + dj]);
+								sum = _mm512_fmadd_ps(pixels, filterVals[di + 1][dj + 1], sum);
+							}
+						}
+					}
+					_mm512_storeu_ps(&result[i * num_cols + j], sum);
+				}
 			}
 		}
-
-		return sol_path;
 	}
+
+	return sol_path;
+}
 }
