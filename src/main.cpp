@@ -41,12 +41,17 @@ namespace solution
 #pragma omp parallel
 		{
 			int tid = omp_get_thread_num();
+			cpu_set_t cpuset;
+			CPU_SET(tid, &cpuset);
+			pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
+		}
+
+#pragma omp parallel
+		{
+			int tid = omp_get_thread_num();
 			// std::cout << tid << std::endl;
-			if (tid < 24)
+			if (tid < omp_get_num_threads() / 2)
 			{
-				cpu_set_t cpuset;
-				CPU_SET(tid * 2, &cpuset);
-				pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
 // #pragma omp single
 // {
 #pragma omp for collapse(2)
