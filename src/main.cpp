@@ -37,24 +37,17 @@ namespace solution
 		{
 			filterVals[i / 3][i % 3] = _mm256_set1_ps(kernel[i / 3][i % 3]);
 		}
-		omp_set_num_threads(48);
-#pragma omp parallel
+
+#pragma omp parallel num_threads(48)
 		{
 			int tid = omp_get_thread_num();
 			cpu_set_t cpuset;
 			CPU_SET(tid, &cpuset);
 			pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
-		}
 
-#pragma omp parallel
-		{
-			int tid = omp_get_thread_num();
-			// std::cout << tid << std::endl;
-			if (tid < omp_get_num_threads() / 2)
+#pragma omp single
 			{
-// #pragma omp single
-// {
-#pragma omp for collapse(2)
+#pragma omp taskloop collapse(2) if (tid % 2 == 0)
 				for (int i = 0; i < num_rows / 2; i++)
 				{
 					for (int j = 0; j < num_cols; j += 8)
@@ -80,13 +73,8 @@ namespace solution
 						_mm256_storeu_ps(&result[i * num_cols + j], sum);
 					}
 				}
-				// }
-			}
-			else
-			{
-				// #pragma omp single
-				// {
-#pragma omp for collapse(2)
+
+#pragma omp taskloop collapse(2) if (tid % 2 == 1)
 				for (int i = num_rows / 2; i < num_rows; i++)
 				{
 					for (int j = 0; j < num_cols; j += 8)
@@ -112,7 +100,6 @@ namespace solution
 						_mm256_storeu_ps(&result[i * num_cols + j], sum);
 					}
 				}
-				// }
 			}
 		}
 		return sol_path;
