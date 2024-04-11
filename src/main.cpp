@@ -86,9 +86,6 @@ namespace solution
 			{
 				// #pragma omp single
 				// {
-				cpu_set_t cpuset;
-				CPU_SET((tid - 24) * 2, &cpuset);
-				pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
 #pragma omp for collapse(2)
 				for (int i = num_rows / 2; i < num_rows; i++)
 				{
