@@ -33,12 +33,15 @@ namespace solution
 		float *result = reinterpret_cast<float *>(mmap(NULL, sizeof(float) * size, PROT_WRITE | PROT_READ, MAP_SHARED, result_fd, 0));
 
 		__m256 filterVals[5];
-		filterVals[0] = _mm256_set1_ps(kernel[0][0]);
-		filterVals[1] = _mm256_set1_ps(kernel[0][1]);
-		filterVals[2] = _mm256_set1_ps(kernel[1][1]);
-		filterVals[3] = filterVals[1];
-		filterVals[4] = filterVals[0];
-
+		filterVals[0][0] = _mm256_set1_ps(0.0625f);
+		filterVals[0][1] = _mm256_set1_ps(0.125f);
+		filterVals[0][2] = filterVals[0][0];
+		filterVals[1][0] = filterVals[0][1];
+		filterVals[1][1] = _mm256_set1_ps(0.25f);
+		filterVals[1][2] = filterVals[0][1];
+		filterVals[2][0] = filterVals[0][0];
+		filterVals[2][1] = filterVals[0][1];
+		filterVals[2][2] = filterVals[0][0];
 
 #pragma omp parallel proc_bind(close) num_threads(12)
 		{
@@ -67,7 +70,7 @@ namespace solution
 										mask &= 0x7F;
 
 									__m256 pixels = _mm256_mask_loadu_ps(_mm256_setzero_ps(), mask, &img[(i + di) * num_cols + j + dj]);
-									sum = _mm256_fmadd_ps(pixels, filterVals[di+dj+2], sum);
+									sum = _mm256_fmadd_ps(pixels, filterVals[di + 1][dj + 1], sum);
 								}
 							}
 						}
