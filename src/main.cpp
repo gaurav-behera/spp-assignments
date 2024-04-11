@@ -49,7 +49,7 @@ namespace solution
 			{
 // #pragma omp single
 				// {
-#pragma omp parallel collapse(2)
+#pragma omp for collapse(2)
 					for (int i = 0; i < num_rows / 2; i++)
 					{
 						for (int j = 0; j < num_cols; j += 8)
