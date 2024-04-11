@@ -46,7 +46,7 @@ namespace solution
 			cpu_id = tid * 2;
 
 			cpu_set_t cpuset;
-			CPU_ZERO(&cpuset);
+			// CPU_ZERO(&cpuset);
 			CPU_SET(cpu_id, &cpuset);
 			pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
 
