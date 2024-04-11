@@ -38,18 +38,18 @@ namespace solution
 			filterVals[i / 3][i % 3] = _mm256_set1_ps(kernel[i / 3][i % 3]);
 		}
 
-#pragma omp parallel proc_bind(close) num_threads(48)
+#pragma omp parallel proc_bind(spread) num_threads(48)
 		{
 			int tid = omp_get_thread_num();
 			cpu_set_t cpuset;
 			CPU_SET(tid, &cpuset);
 			pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
-			if (tid %2)
+			if (tid % 2)
 			{
 #pragma omp single
 				{
 #pragma omp taskloop collapse(2)
-					for (int i = 0; i < num_rows/2; i++)
+					for (int i = 0; i < num_rows / 2; i++)
 					{
 						for (int j = 0; j < num_cols; j += 8)
 						{
@@ -81,7 +81,7 @@ namespace solution
 #pragma omp single
 				{
 #pragma omp taskloop collapse(2)
-					for (int i = num_rows/2; i < num_rows; i++)
+					for (int i = num_rows / 2; i < num_rows; i++)
 					{
 						for (int j = 0; j < num_cols; j += 8)
 						{
