@@ -37,13 +37,14 @@ namespace solution
 		{
 			filterVals[i / 3][i % 3] = _mm256_set1_ps(kernel[i / 3][i % 3]);
 		}
-
-#pragma omp parallel proc_bind(spread) num_threads(48)
+		omp_set_num_threads(48);
+#pragma omp parallel proc_bind(close)
 		{
 			int tid = omp_get_thread_num();
 			cpu_set_t cpuset;
 			CPU_SET(tid, &cpuset);
 			pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
+			std::cout << tid << std::endl;
 			if (tid % 2)
 			{
 #pragma omp single
