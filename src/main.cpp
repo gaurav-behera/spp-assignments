@@ -44,7 +44,7 @@ namespace solution
 			cpu_set_t cpuset;
 			CPU_SET(tid, &cpuset);
 			pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
-			if (tid < 24)
+			if (tid %2)
 			{
 #pragma omp single
 				{
