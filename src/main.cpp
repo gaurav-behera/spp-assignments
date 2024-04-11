@@ -40,6 +40,7 @@ namespace solution
 
 #pragma omp parallel proc_bind(close) num_threads(24)
 		{
+			cpu_set_t cpuset;
 			CPU_SET(omp_get_thread_num()*2, &cpuset);
 			pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
 
