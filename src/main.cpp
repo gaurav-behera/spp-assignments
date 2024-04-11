@@ -33,10 +33,16 @@ namespace solution
 		float *result = reinterpret_cast<float *>(mmap(NULL, sizeof(float) * size, PROT_WRITE | PROT_READ, MAP_SHARED, result_fd, 0));
 
 		__m256 filterVals[3][3];
-		for (int i = 0; i < 9; i++)
-		{
-			filterVals[i / 3][i % 3] = _mm256_set1_ps(kernel[i / 3][i % 3]);
-		}
+		filterVals[0][0] = _mm256_set1_ps(kernel[0][0]);
+		filterVals[0][1] = _mm256_set1_ps(kernel[0][1]);
+		filterVals[0][2] = filterVals[0][0];
+		filterVals[1][0] = filterVals[0][1];
+		filterVals[1][1] = _mm256_set1_ps(kernel[1][1]);
+		filterVals[1][2] = filterVals[0][1];
+		filterVals[2][0] = filterVals[0][0];
+		filterVals[2][1] = filterVals[0][1];
+		filterVals[2][2] = filterVals[0][0];
+
 
 #pragma omp parallel proc_bind(close) num_threads(24)
 		{
