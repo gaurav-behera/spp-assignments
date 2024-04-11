@@ -47,9 +47,9 @@ namespace solution
 			// std::cout << tid << std::endl;
 			if (tid % 2)
 			{
-#pragma omp single
-				{
-#pragma omp taskloop collapse(2)
+// #pragma omp single
+				// {
+#pragma omp parallel collapse(2)
 					for (int i = 0; i < num_rows / 2; i++)
 					{
 						for (int j = 0; j < num_cols; j += 8)
@@ -75,13 +75,13 @@ namespace solution
 							_mm256_storeu_ps(&result[i * num_cols + j], sum);
 						}
 					}
-				}
+				// }
 			}
 			else
 			{
-#pragma omp single
-				{
-#pragma omp taskloop collapse(2)
+// #pragma omp single
+				// {
+#pragma omp for collapse(2)
 					for (int i = num_rows / 2; i < num_rows; i++)
 					{
 						for (int j = 0; j < num_cols; j += 8)
@@ -107,7 +107,7 @@ namespace solution
 							_mm256_storeu_ps(&result[i * num_cols + j], sum);
 						}
 					}
-				}
+				// }
 			}
 		}
 		return sol_path;
