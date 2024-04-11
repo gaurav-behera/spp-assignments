@@ -1,4 +1,4 @@
-#pragma GCC optimize("O3,unroll-loops")
+#pragma GCC optimize("Ofast,unroll-loops")
 // #pragma GCC target("avx2,bmi,bmi2,lzcnt,popcnt")
 #pragma GCC target("avx2,bmi,bmi2,lzcnt,popcnt,avx512f")
 #include <iostream>
@@ -40,14 +40,7 @@ namespace solution
 
 #pragma omp parallel proc_bind(close) num_threads(24)
 		{
-			int tid = omp_get_thread_num();
-			int cpu_id;
-
-			cpu_id = tid * 2;
-
-			cpu_set_t cpuset;
-			// CPU_ZERO(&cpuset);
-			CPU_SET(cpu_id, &cpuset);
+			CPU_SET(omp_get_thread_num()*2, &cpuset);
 			pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
 
 #pragma omp single
