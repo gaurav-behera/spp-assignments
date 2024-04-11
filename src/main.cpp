@@ -38,43 +38,77 @@ namespace solution
 			filterVals[i / 3][i % 3] = _mm256_set1_ps(kernel[i / 3][i % 3]);
 		}
 
-#pragma omp parallel proc_bind(close) num_threads(24)
+#pragma omp parallel proc_bind(close) num_threads(48)
 		{
+			int tid = omp_get_thread_num();
 			cpu_set_t cpuset;
-			CPU_SET(omp_get_thread_num() * 2, &cpuset);
+			CPU_SET(tid, &cpuset);
 			pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
-
-#pragma omp single
+			if (tid < 24)
 			{
-#pragma omp taskloop collapse(2)
-				for (int i = 0; i < num_rows; i++)
+#pragma omp single
 				{
-					for (int j = 0; j < num_cols; j += 8)
+#pragma omp taskloop collapse(2)
+					for (int i = 0; i < num_rows/2; i++)
 					{
-						__m256 sum = _mm256_setzero_ps();
-						for (int di = -1; di <= 1; di++)
+						for (int j = 0; j < num_cols; j += 8)
 						{
-							if (i + di >= 0 && i + di < num_rows)
+							__m256 sum = _mm256_setzero_ps();
+							for (int di = -1; di <= 1; di++)
 							{
-								for (int dj = -1; dj <= 1; dj++)
+								if (i + di >= 0 && i + di < num_rows)
 								{
-									__mmask8 mask = 0xFF;
-									if (j + dj < 0)
-										mask &= 0xFE;
-									if (j + dj + 7 >= num_cols)
-										mask &= 0x7F;
+									for (int dj = -1; dj <= 1; dj++)
+									{
+										__mmask8 mask = 0xFF;
+										if (j + dj < 0)
+											mask &= 0xFE;
+										if (j + dj + 7 >= num_cols)
+											mask &= 0x7F;
 
-									__m256 pixels = _mm256_mask_loadu_ps(_mm256_setzero_ps(), mask, &img[(i + di) * num_cols + j + dj]);
-									sum = _mm256_fmadd_ps(pixels, filterVals[di + 1][dj + 1], sum);
+										__m256 pixels = _mm256_mask_loadu_ps(_mm256_setzero_ps(), mask, &img[(i + di) * num_cols + j + dj]);
+										sum = _mm256_fmadd_ps(pixels, filterVals[di + 1][dj + 1], sum);
+									}
 								}
 							}
+							_mm256_storeu_ps(&result[i * num_cols + j], sum);
 						}
-						_mm256_storeu_ps(&result[i * num_cols + j], sum);
+					}
+				}
+			}
+			else
+			{
+#pragma omp single
+				{
+#pragma omp taskloop collapse(2)
+					for (int i = num_rows/2; i < num_rows; i++)
+					{
+						for (int j = 0; j < num_cols; j += 8)
+						{
+							__m256 sum = _mm256_setzero_ps();
+							for (int di = -1; di <= 1; di++)
+							{
+								if (i + di >= 0 && i + di < num_rows)
+								{
+									for (int dj = -1; dj <= 1; dj++)
+									{
+										__mmask8 mask = 0xFF;
+										if (j + dj < 0)
+											mask &= 0xFE;
+										if (j + dj + 7 >= num_cols)
+											mask &= 0x7F;
+
+										__m256 pixels = _mm256_mask_loadu_ps(_mm256_setzero_ps(), mask, &img[(i + di) * num_cols + j + dj]);
+										sum = _mm256_fmadd_ps(pixels, filterVals[di + 1][dj + 1], sum);
+									}
+								}
+							}
+							_mm256_storeu_ps(&result[i * num_cols + j], sum);
+						}
 					}
 				}
 			}
 		}
-
 		return sol_path;
 	}
 }
