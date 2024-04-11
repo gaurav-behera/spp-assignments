@@ -40,14 +40,14 @@ namespace solution
 
 #pragma omp parallel num_threads(24)
 		{
-			int tid = omp_get_thread_num()*2;
+			int tid = omp_get_thread_num() * 2;
 			cpu_set_t cpuset;
 			CPU_SET(tid, &cpuset);
 			pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
 
 #pragma omp single
 			{
-#pragma omp taskloop collapse(2) if (tid % 2 == 0)
+#pragma omp taskloop collapse(2)
 				for (int i = 0; i < num_rows; i++)
 				{
 					for (int j = 0; j < num_cols; j += 8)
@@ -73,7 +73,7 @@ namespace solution
 						_mm256_storeu_ps(&result[i * num_cols + j], sum);
 					}
 				}
-}
+			}
 		}
 		return sol_path;
 	}
