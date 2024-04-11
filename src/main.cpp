@@ -58,7 +58,7 @@ namespace solution
 							{
 								for (int dj = -1; dj <= 1; dj++)
 								{
-									__mmask8 mask = 0xFFF;
+									__mmask8 mask = 0xFF;
 									if (j + dj < 0)
 										mask &= 0xFE;
 									if (j + dj + 15 >= num_cols)
