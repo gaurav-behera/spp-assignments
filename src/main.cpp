@@ -41,72 +41,75 @@ namespace solution
 #pragma omp parallel
 		{
 			int tid = omp_get_thread_num();
-			cpu_set_t cpuset;
-			CPU_SET(tid, &cpuset);
-			pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
 			// std::cout << tid << std::endl;
-			if (tid % 2)
+			if (tid < 24)
 			{
+				cpu_set_t cpuset;
+				CPU_SET(tid * 2, &cpuset);
+				pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
 // #pragma omp single
-				// {
+// {
 #pragma omp for collapse(2)
-					for (int i = 0; i < num_rows / 2; i++)
+				for (int i = 0; i < num_rows / 2; i++)
+				{
+					for (int j = 0; j < num_cols; j += 8)
 					{
-						for (int j = 0; j < num_cols; j += 8)
+						__m256 sum = _mm256_setzero_ps();
+						for (int di = -1; di <= 1; di++)
 						{
-							__m256 sum = _mm256_setzero_ps();
-							for (int di = -1; di <= 1; di++)
+							if (i + di >= 0 && i + di < num_rows)
 							{
-								if (i + di >= 0 && i + di < num_rows)
+								for (int dj = -1; dj <= 1; dj++)
 								{
-									for (int dj = -1; dj <= 1; dj++)
-									{
-										__mmask8 mask = 0xFF;
-										if (j + dj < 0)
-											mask &= 0xFE;
-										if (j + dj + 7 >= num_cols)
-											mask &= 0x7F;
+									__mmask8 mask = 0xFF;
+									if (j + dj < 0)
+										mask &= 0xFE;
+									if (j + dj + 7 >= num_cols)
+										mask &= 0x7F;
 
-										__m256 pixels = _mm256_mask_loadu_ps(_mm256_setzero_ps(), mask, &img[(i + di) * num_cols + j + dj]);
-										sum = _mm256_fmadd_ps(pixels, filterVals[di + 1][dj + 1], sum);
-									}
+									__m256 pixels = _mm256_mask_loadu_ps(_mm256_setzero_ps(), mask, &img[(i + di) * num_cols + j + dj]);
+									sum = _mm256_fmadd_ps(pixels, filterVals[di + 1][dj + 1], sum);
 								}
 							}
-							_mm256_storeu_ps(&result[i * num_cols + j], sum);
 						}
+						_mm256_storeu_ps(&result[i * num_cols + j], sum);
 					}
+				}
 				// }
 			}
 			else
 			{
-// #pragma omp single
+				// #pragma omp single
 				// {
+				cpu_set_t cpuset;
+				CPU_SET((tid - 24) * 2, &cpuset);
+				pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
 #pragma omp for collapse(2)
-					for (int i = num_rows / 2; i < num_rows; i++)
+				for (int i = num_rows / 2; i < num_rows; i++)
+				{
+					for (int j = 0; j < num_cols; j += 8)
 					{
-						for (int j = 0; j < num_cols; j += 8)
+						__m256 sum = _mm256_setzero_ps();
+						for (int di = -1; di <= 1; di++)
 						{
-							__m256 sum = _mm256_setzero_ps();
-							for (int di = -1; di <= 1; di++)
+							if (i + di >= 0 && i + di < num_rows)
 							{
-								if (i + di >= 0 && i + di < num_rows)
+								for (int dj = -1; dj <= 1; dj++)
 								{
-									for (int dj = -1; dj <= 1; dj++)
-									{
-										__mmask8 mask = 0xFF;
-										if (j + dj < 0)
-											mask &= 0xFE;
-										if (j + dj + 7 >= num_cols)
-											mask &= 0x7F;
+									__mmask8 mask = 0xFF;
+									if (j + dj < 0)
+										mask &= 0xFE;
+									if (j + dj + 7 >= num_cols)
+										mask &= 0x7F;
 
-										__m256 pixels = _mm256_mask_loadu_ps(_mm256_setzero_ps(), mask, &img[(i + di) * num_cols + j + dj]);
-										sum = _mm256_fmadd_ps(pixels, filterVals[di + 1][dj + 1], sum);
-									}
+									__m256 pixels = _mm256_mask_loadu_ps(_mm256_setzero_ps(), mask, &img[(i + di) * num_cols + j + dj]);
+									sum = _mm256_fmadd_ps(pixels, filterVals[di + 1][dj + 1], sum);
 								}
 							}
-							_mm256_storeu_ps(&result[i * num_cols + j], sum);
 						}
+						_mm256_storeu_ps(&result[i * num_cols + j], sum);
 					}
+				}
 				// }
 			}
 		}
