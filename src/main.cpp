@@ -61,7 +61,7 @@ namespace solution
 									__mmask8 mask = 0xFF;
 									if (j + dj < 0)
 										mask &= 0xFE;
-									if (j + dj + 15 >= num_cols)
+									if (j + dj + 7 >= num_cols)
 										mask &= 0x7F;
 
 									__m256 pixels = _mm256_mask_loadu_ps(_mm256_setzero_ps(), mask, &img[(i + di) * num_cols + j + dj]);
