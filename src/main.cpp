@@ -1,6 +1,6 @@
 #pragma GCC optimize("Ofast,unroll-loops")
-// #pragma GCC target("avx2,bmi,bmi2,lzcnt,popcnt")
-#pragma GCC target("avx2,bmi,bmi2,lzcnt,popcnt,avx512f")
+#pragma GCC target("avx2,bmi,bmi2,lzcnt,popcnt")
+// #pragma GCC target("avx2,bmi,bmi2,lzcnt,popcnt,avx512f")
 #include <iostream>
 #include <fstream>
 #include <memory>
@@ -32,16 +32,16 @@ namespace solution
 		ftruncate(result_fd, sizeof(float) * size);
 		float *result = reinterpret_cast<float *>(mmap(NULL, sizeof(float) * size, PROT_WRITE | PROT_READ, MAP_SHARED, result_fd, 0));
 
-		__m512 filterVals[3][3];
+		__m256 filterVals[3][3];
 		for (int i = 0; i < 9; i++)
 		{
-			filterVals[i / 3][i % 3] = _mm512_set1_ps(kernel[i / 3][i % 3]);
+			filterVals[i / 3][i % 3] = _mm256_set1_ps(kernel[i / 3][i % 3]);
 		}
 
 #pragma omp parallel proc_bind(close) num_threads(24)
 		{
 			cpu_set_t cpuset;
-			CPU_SET(omp_get_thread_num()*2, &cpuset);
+			CPU_SET(omp_get_thread_num() * 2, &cpuset);
 			pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
 
 #pragma omp single
@@ -49,27 +49,27 @@ namespace solution
 #pragma omp taskloop collapse(2)
 				for (int i = 0; i < num_rows; i++)
 				{
-					for (int j = 0; j < num_cols; j += 16)
+					for (int j = 0; j < num_cols; j += 8)
 					{
-						__m512 sum = _mm512_setzero_ps();
+						__m256 sum = _mm256_setzero_ps();
 						for (int di = -1; di <= 1; di++)
 						{
 							if (i + di >= 0 && i + di < num_rows)
 							{
 								for (int dj = -1; dj <= 1; dj++)
 								{
-									__mmask16 mask = 0xFFFF;
+									__mmask8 mask = 0xFFF;
 									if (j + dj < 0)
-										mask &= 0xFFFE;
+										mask &= 0xFE;
 									if (j + dj + 15 >= num_cols)
-										mask &= 0x7FFF;
+										mask &= 0x7F;
 
-									__m512 pixels = _mm512_mask_loadu_ps(_mm512_setzero_ps(), mask, &img[(i + di) * num_cols + j + dj]);
-									sum = _mm512_fmadd_ps(pixels, filterVals[di + 1][dj + 1], sum);
+									__m256 pixels = _mm256_mask_loadu_ps(_mm256_setzero_ps(), mask, &img[(i + di) * num_cols + j + dj]);
+									sum = _mm256_fmadd_ps(pixels, filterVals[di + 1][dj + 1], sum);
 								}
 							}
 						}
-						_mm512_storeu_ps(&result[i * num_cols + j], sum);
+						_mm256_storeu_ps(&result[i * num_cols + j], sum);
 					}
 				}
 			}
