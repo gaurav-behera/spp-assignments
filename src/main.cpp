@@ -32,7 +32,7 @@ namespace solution
 		ftruncate(result_fd, sizeof(float) * size);
 		float *result = reinterpret_cast<float *>(mmap(NULL, sizeof(float) * size, PROT_WRITE | PROT_READ, MAP_SHARED, result_fd, 0));
 
-		__m256 filterVals[5];
+		__m256 filterVals[3][3];
 		filterVals[0][0] = _mm256_set1_ps(0.0625f);
 		filterVals[0][1] = _mm256_set1_ps(0.125f);
 		filterVals[0][2] = filterVals[0][0];
