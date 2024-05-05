@@ -37,7 +37,7 @@ namespace solution
 		float *m2 = static_cast<float *>(mmap(NULL, sizeof(float) * k * m, PROT_READ, MAP_PRIVATE, m2_fd, 0));
 
 		int ver_fd = open("Kkk32dhDh.dat", O_RDONLY);
-		float *ver = static_cast<float *>(mmap(NULL, sizeof(float) * not * m, PROT_READ, MAP_PRIVATE, ver_fd, 0));
+		float *ver = static_cast<float *>(mmap(NULL, sizeof(float) * n * m, PROT_READ, MAP_PRIVATE, ver_fd, 0));
 
 		int result_fd = open(sol_path.c_str(), O_CREAT | O_RDWR, 0644);
 		ftruncate(result_fd, sizeof(float) * n * m);
