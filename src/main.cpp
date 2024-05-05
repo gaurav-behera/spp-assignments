@@ -29,6 +29,12 @@ namespace solution
 		}
 
 		int block_size = 64;
+		 for (int i = 0; i < n; i++)
+	        for (int j = 0; j < m; j++) {
+	            result[i*m + j] = 0;
+	            for (int l = 0; l < k; ++l) 
+	            	result[i*m + j] += m1[i*k + l] * m2[l*m + j];
+	        }
 
 // #pragma omp parallel num_threads(24)
 // 		{
@@ -71,26 +77,26 @@ namespace solution
 		
 		
 		// works - 800ms
-		#pragma omp parallel for collapse(2)
-		for (int block_i = 0; block_i < n / block_size; block_i++)
-		{
-			for (int block_j = 0; block_j < n / block_size; block_j++)
-			{
-				for (int sub_block_k = 0; sub_block_k < n / block_size; sub_block_k++)
-				{
-					for (int idx = 0; idx < block_size; idx++)
-					{
-						for (int i = 0; i < block_size; i++)
-						{
-							for (int j = 0; j < block_size; j++)
-							{
-								result[(i + block_i * block_size) * n + (j + block_j * block_size)] += m1[(i + block_i * block_size) * n + (sub_block_k * block_size + idx)] * m2[(sub_block_k * block_size + idx) * n + (block_j * block_size + j)];
-							}
-						}
-					}
-				}
-			}
-		}
+		// #pragma omp parallel for collapse(2)
+		// for (int block_i = 0; block_i < n / block_size; block_i++)
+		// {
+		// 	for (int block_j = 0; block_j < n / block_size; block_j++)
+		// 	{
+		// 		for (int sub_block_k = 0; sub_block_k < n / block_size; sub_block_k++)
+		// 		{
+		// 			for (int idx = 0; idx < block_size; idx++)
+		// 			{
+		// 				for (int i = 0; i < block_size; i++)
+		// 				{
+		// 					for (int j = 0; j < block_size; j++)
+		// 					{
+		// 						result[(i + block_i * block_size) * n + (j + block_j * block_size)] += m1[(i + block_i * block_size) * n + (sub_block_k * block_size + idx)] * m2[(sub_block_k * block_size + idx) * n + (block_j * block_size + j)];
+		// 					}
+		// 				}
+		// 			}
+		// 		}
+		// 	}
+		// }
 
 		// for (int i = 0; i < n * m; i++)
 		// {
