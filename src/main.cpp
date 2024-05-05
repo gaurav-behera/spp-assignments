@@ -40,15 +40,16 @@ namespace solution
 					{
 						for (int i = 0; i < block_size; i++)
 						{
-							for (int j = 0; j < block_size; j += 16)
+							for (int j = 0; j < block_size; j++)
 							{
-								int base1 = (i + block_i * block_size) * n + (sub_block_k * block_size + idx);
-								int base2 = (sub_block_k * block_size + idx) * n + (block_j * block_size + j);
-								int final_base = (i + block_i * block_size) * n + (j + block_j * block_size);
-								__m512 m1_vec = _mm512_set1_ps(m1[base1]);
-								__m512 m2_vec = _mm512_loadu_ps(&m2[base2]);
-								__m512 res = _mm512_fmadd_ps(m1_vec, m2_vec, _mm512_loadu_ps(&result[final_base]));
-								_mm512_store_ps(&result[final_base], res);
+								// int base1 = (i + block_i * block_size) * n + (sub_block_k * block_size + idx);
+								// int base2 = (sub_block_k * block_size + idx) * n + (block_j * block_size + j);
+								// int final_base = (i + block_i * block_size) * n + (j + block_j * block_size);
+								// __m512 m1_vec = _mm512_set1_ps(m1[base1]);
+								// __m512 m2_vec = _mm512_loadu_ps(&m2[base2]);
+								// __m512 res = _mm512_fmadd_ps(m1_vec, m2_vec, _mm512_loadu_ps(&result[final_base]));
+								// _mm512_store_ps(&result[final_base], res);
+								result[(i + block_i * block_size) * n + (j + block_j * block_size)] += m1[(i + block_i * block_size) * n + (sub_block_k * block_size + idx)] * m2[(sub_block_k * block_size + idx) * n + (block_j * block_size + j)];
 							}
 						}
 					}
