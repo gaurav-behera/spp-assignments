@@ -1,5 +1,6 @@
 #pragma GCC optimize("O3,unroll-loops")
-#pragma GCC target("avx2,bmi,bmi2,lzcnt,popcnt")
+// #pragma GCC target("avx2,bmi,bmi2,lzcnt,popcnt")
+#pragma GCC target("avx2,bmi,bmi2,lzcnt,popcnt,avx512f")
 #include <iostream>
 #include <fstream>
 #include <memory>
@@ -8,25 +9,41 @@
 #include <string>
 #include <omp.h>
 #include <immintrin.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <sys/mman.h>
+#include <cstring>
+#include <pthread.h>
+#include <sched.h>
 
 namespace solution
 {
 	std::string compute(const std::string &m1_path, const std::string &m2_path, int n, int k, int m)
 	{
 		std::string sol_path = std::filesystem::temp_directory_path() / "student_sol.dat";
-		std::ofstream sol_fs(sol_path, std::ios::binary);
-		std::ifstream m1_fs(m1_path, std::ios::binary), m2_fs(m2_path, std::ios::binary);
-		auto m1 = std::make_unique<float[]>(n * k), m2 = std::make_unique<float[]>(k * m);
-		m1_fs.read(reinterpret_cast<char *>(m1.get()), sizeof(float) * n * k);
-		m2_fs.read(reinterpret_cast<char *>(m2.get()), sizeof(float) * k * m);
-		m1_fs.close();
-		m2_fs.close();
-		auto result = std::make_unique<float[]>(n * m);
 
-		for (int i = 0; i < n * m; i++)
-		{
-			result[i] = 0;
-		}
+		// std::ofstream sol_fs(sol_path, std::ios::binary);
+		// std::ifstream m1_fs(m1_path, std::ios::binary), m2_fs(m2_path, std::ios::binary);
+		// auto m1 = std::make_unique<float[]>(n * k), m2 = std::make_unique<float[]>(k * m);
+		// m1_fs.read(reinterpret_cast<char *>(m1.get()), sizeof(float) * n * k);
+		// m2_fs.read(reinterpret_cast<char *>(m2.get()), sizeof(float) * k * m);
+		// m1_fs.close();
+		// m2_fs.close();
+		// auto result = std::make_unique<float[]>(n * m);
+
+		int m1_fd = open(m1_path.c_str(), O_RDONLY);
+		float *m1 = static_cast<float *>(mmap(NULL, sizeof(float) * n * k, PROT_READ, MAP_PRIVATE, m1_fd, 0));
+		int m2_fd = open(m2_path.c_str(), O_RDONLY);
+		float *m2 = static_cast<float *>(mmap(NULL, sizeof(float) * k * m, PROT_READ, MAP_PRIVATE, m2_fd, 0));
+
+		int result_fd = open(sol_path.c_str(), O_CREAT | O_RDWR, 0644);
+		ftruncate(result_fd, sizeof(float) * n * m);
+		float *result = reinterpret_cast<float *>(mmap(NULL, sizeof(float) * n * m, PROT_WRITE | PROT_READ, MAP_SHARED, result_fd, 0));
+
+		// for (int i = 0; i < n * m; i++)
+		// {
+		// 	result[i] = 0;
+		// }
 
 		int block_size = 128;
 
@@ -106,8 +123,8 @@ namespace solution
 		// }
 		// std::cout << std::endl;
 
-		sol_fs.write(reinterpret_cast<const char *>(result.get()), sizeof(float) * n * m);
-		sol_fs.close();
+		// sol_fs.write(reinterpret_cast<const char *>(result.get()), sizeof(float) * n * m);
+		// sol_fs.close();
 		return sol_path;
 	}
 };
