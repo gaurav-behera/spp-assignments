@@ -30,16 +30,16 @@ namespace solution
 
 		int block_size = 64;
 
-#pragma omp parallel num_threads(24)
+// #pragma omp parallel num_threads(24)
 		{
-			int tid = omp_get_thread_num() * 2;
-			cpu_set_t cpuset;
-			CPU_SET(tid, &cpuset);
-			pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
+			// int tid = omp_get_thread_num() * 2;
+			// cpu_set_t cpuset;
+			// CPU_SET(tid, &cpuset);
+			// pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
 
-#pragma omp single
+// #pragma omp single
 			{
-#pragma omp taskloop collapse(2)
+// #pragma omp taskloop collapse(2)
 				for (int block_i = 0; block_i < n / block_size; block_i++)
 				{
 					for (int block_j = 0; block_j < n / block_size; block_j++)
