@@ -28,7 +28,7 @@ namespace solution
 			result[i] = 0;
 		}
 
-		int block_size = 64;
+		int block_size = 128;
 
 #pragma omp parallel num_threads(24)
 		{
@@ -50,15 +50,12 @@ namespace solution
 							{
 								for (int i = 0; i < block_size; i++)
 								{
-									for (int j = 0; j < block_size; j+=16)
+									for (int j = 0; j < block_size; j += 16)
 									{
 										int base1 = (i + block_i * block_size) * n + (sub_block_k * block_size + idx);
 										int base2 = (sub_block_k * block_size + idx) * n + (block_j * block_size + j);
 										int final_base = (i + block_i * block_size) * n + (j + block_j * block_size);
-										__m512 m1_vec = _mm512_set1_ps(m1[base1]);
-										__m512 m2_vec = _mm512_loadu_ps(&m2[base2]);
-										__m512 res = _mm512_fmadd_ps(m1_vec, m2_vec, _mm512_loadu_ps(&result[final_base]));
-										_mm512_storeu_ps(&result[final_base], res);
+										_mm512_storeu_ps(&result[final_base], _mm512_fmadd_ps(_mm512_set1_ps(m1[base1]), _mm512_loadu_ps(&m2[base2]), _mm512_loadu_ps(&result[final_base])));
 										// result[(i + block_i * block_size) * n + (j + block_j * block_size)] += m1[(i + block_i * block_size) * n + (sub_block_k * block_size + idx)] * m2[(sub_block_k * block_size + idx) * n + (block_j * block_size + j)];
 									}
 								}
@@ -68,8 +65,7 @@ namespace solution
 				}
 			}
 		}
-		
-		
+
 		// works - 800ms
 		// #pragma omp parallel for collapse(2)
 		// for (int block_i = 0; block_i < n / block_size; block_i++)
