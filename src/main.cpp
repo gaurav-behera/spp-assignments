@@ -57,7 +57,7 @@ namespace solution
 										int final_base = (i + block_i * block_size) * n + (j + block_j * block_size);
 										__m512 m1_vec = _mm512_set1_ps(m1[base1]);
 										__m512 m2_vec = _mm512_loadu_ps(&m2[base2]);
-										__m512 res = _mm512_fmadd_ps(m2_vec, m1_vec, _mm512_loadu_ps(&result[final_base]));
+										__m512 res = _mm512_fmadd_ps(m1_vec, m2_vec, _mm512_loadu_ps(&result[final_base]));
 										_mm512_storeu_ps(&result[final_base], res);
 										// result[(i + block_i * block_size) * n + (j + block_j * block_size)] += m1[(i + block_i * block_size) * n + (sub_block_k * block_size + idx)] * m2[(sub_block_k * block_size + idx) * n + (block_j * block_size + j)];
 									}
