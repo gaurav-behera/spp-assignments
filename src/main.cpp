@@ -1,6 +1,6 @@
 #pragma GCC optimize("O3,unroll-loops")
-#pragma GCC target("avx2,bmi,bmi2,lzcnt,popcnt")
-// #pragma GCC target("avx2,bmi,bmi2,lzcnt,popcnt,avx512f")
+// #pragma GCC target("avx2,bmi,bmi2,lzcnt,popcnt")
+#pragma GCC target("avx2,bmi,bmi2,lzcnt,popcnt,avx512f")
 #include <iostream>
 #include <fstream>
 #include <memory>
@@ -40,26 +40,23 @@ namespace solution
 			CPU_SET(tid, &cpuset);
 			pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
 
-#pragma omp single
+#pragma omp for collapse(2)
+			for (int block_i = 0; block_i < n / block_size; block_i++)
 			{
-#pragma omp taskloop collapse(2)
-				for (int block_i = 0; block_i < n / block_size; block_i++)
+				for (int block_j = 0; block_j < n / block_size; block_j++)
 				{
-					for (int block_j = 0; block_j < n / block_size; block_j++)
+					for (int sub_block_k = 0; sub_block_k < n / block_size; sub_block_k++)
 					{
-						for (int sub_block_k = 0; sub_block_k < n / block_size; sub_block_k++)
+						for (int idx = 0; idx < block_size; idx++)
 						{
-							for (int idx = 0; idx < block_size; idx++)
+							for (int i = 0; i < block_size; i++)
 							{
-								for (int i = 0; i < block_size; i++)
+								for (int j = 0; j < block_size; j += 16)
 								{
-									for (int j = 0; j < block_size; j += 8)
-									{
-										int base1 = (i + block_i * block_size) * n + (sub_block_k * block_size + idx);
-										int base2 = (sub_block_k * block_size + idx) * n + (block_j * block_size + j);
-										int final_base = (i + block_i * block_size) * n + (j + block_j * block_size);
-										_mm256_storeu_ps(&result[final_base], _mm256_fmadd_ps(_mm256_set1_ps(m1[base1]), _mm256_loadu_ps(&m2[base2]), _mm256_loadu_ps(&result[final_base])));
-									}
+									int base1 = (i + block_i * block_size) * n + (sub_block_k * block_size + idx);
+									int base2 = (sub_block_k * block_size + idx) * n + (block_j * block_size + j);
+									int final_base = (i + block_i * block_size) * n + (j + block_j * block_size);
+									_mm512_storeu_ps(&result[final_base], _mm512_fmadd_ps(_mm512_set1_ps(m1[base1]), _mm512_loadu_ps(&m2[base2]), _mm512_loadu_ps(&result[final_base])));
 								}
 							}
 						}
