@@ -28,7 +28,7 @@ namespace solution
 		int m2_fd = open(m2_path.c_str(), O_RDONLY);
 		float *m2 = static_cast<float *>(mmap(NULL, sizeof(float) * size, PROT_READ, MAP_PRIVATE, m2_fd, 0));
 
-		int result_fd = open(sol_path.c_str(), O_CREAT | O_RDWR);
+		int result_fd = open(sol_path.c_str(), O_CREAT | O_RDWR, 0644);
 		ftruncate(result_fd, sizeof(float) * size);
 		float *result = reinterpret_cast<float *>(mmap(NULL, sizeof(float) * size, PROT_WRITE, MAP_SHARED, result_fd, 0));
 
@@ -48,7 +48,6 @@ namespace solution
 				{
 					for (int sub_block_k = 0; sub_block_k < block_count; sub_block_k++)
 					{
-						#pragma omp parallel for
 						for (int idx = 0; idx < block_size; idx++)
 						{
 							for (int i = 0; i < block_size; i++)
@@ -58,7 +57,6 @@ namespace solution
 									int base1 = (i + block_i * block_size) * n + (sub_block_k * block_size + idx);
 									int base2 = (sub_block_k * block_size + idx) * n + (block_j * block_size + j);
 									int final_base = (i + block_i * block_size) * n + (j + block_j * block_size);
-									#pragma omp critical
 									_mm512_storeu_ps(&result[final_base], _mm512_fmadd_ps(_mm512_set1_ps(m1[base1]), _mm512_loadu_ps(&m2[base2]), _mm512_loadu_ps(&result[final_base])));
 								}
 							}
