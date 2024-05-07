@@ -1,6 +1,6 @@
-#pragma GCC optimize("Ofast,unroll-loops")
+#pragma GCC optimize("O3,unroll-loops")
 // #pragma GCC target("avx2,bmi,bmi2,lzcnt,popcnt")
-#pragma GCC target("avx512f")
+#pragma GCC target("avx2,bmi,bmi2,lzcnt,popcnt,avx512f")
 #include <filesystem>
 #include <omp.h>
 #include <immintrin.h>
