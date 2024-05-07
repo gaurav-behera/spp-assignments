@@ -45,7 +45,7 @@ namespace solution
 		// 	result[i] = 0;
 		// }
 
-		int block_size = 128;
+		int block_size = 256;
 
 #pragma omp parallel num_threads(24)
 		{
