@@ -31,15 +31,15 @@ namespace solution
 		ftruncate(result_fd, sizeof(float) * n * m);
 		float *result = reinterpret_cast<float *>(mmap(NULL, sizeof(float) * n * m, PROT_WRITE | PROT_READ, MAP_SHARED, result_fd, 0));
 
-		int block_size = 64;
+		int block_size = 128;
 		int block_count = n / block_size;
 
-#pragma omp parallel num_threads(48) proc_bind(spread)
+#pragma omp parallel num_threads(48)
 		{
-			// int tid = omp_get_thread_num();
-			// cpu_set_t cpuset;
-			// CPU_SET(tid, &cpuset);
-			// pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
+			int tid = omp_get_thread_num();
+			cpu_set_t cpuset;
+			CPU_SET(tid, &cpuset);
+			pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
 
 #pragma omp for collapse(2)
 			for (int block_i = 0; block_i < block_count; block_i++)
