@@ -61,7 +61,7 @@ namespace solution
 				{
 					for (int block_j = 0; block_j < n / block_size; block_j++)
 					{
-						for (int sub_block_k = 0; sub_block_k < n / block_size; sub_block_k++)
+						for (int sub_block_k = n / block_size - 1; sub_block_k >= 0; sub_block_k--)
 						{
 							for (int idx = 0; idx < block_size; idx++)
 							{
