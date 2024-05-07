@@ -1,20 +1,12 @@
-#pragma GCC optimize("O3,unroll-loops")
+#pragma GCC optimize("Ofast,unroll-loops")
 // #pragma GCC target("avx2,bmi,bmi2,lzcnt,popcnt")
-#pragma GCC target("bmi,bmi2,lzcnt,popcnt,avx512f")
-#include <iostream>
-#include <fstream>
-#include <memory>
-#include <cstdint>
+#pragma GCC target("avx512f")
 #include <filesystem>
-#include <string>
 #include <omp.h>
 #include <immintrin.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/mman.h>
-#include <cstring>
-#include <pthread.h>
-#include <sched.h>
 
 namespace solution
 {
