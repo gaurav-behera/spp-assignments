@@ -36,9 +36,6 @@ namespace solution
 		int m2_fd = open(m2_path.c_str(), O_RDONLY);
 		float *m2 = static_cast<float *>(mmap(NULL, sizeof(float) * k * m, PROT_READ, MAP_PRIVATE, m2_fd, 0));
 
-		int ver_fd = open("Kkk32dhDh.dat", O_RDONLY);
-		float *ver = static_cast<float *>(mmap(NULL, sizeof(float) * n * m, PROT_READ, MAP_PRIVATE, ver_fd, 0));
-
 		int result_fd = open(sol_path.c_str(), O_CREAT | O_RDWR, 0644);
 		ftruncate(result_fd, sizeof(float) * n * m);
 		float *result = reinterpret_cast<float *>(mmap(NULL, sizeof(float) * n * m, PROT_WRITE | PROT_READ, MAP_SHARED, result_fd, 0));
@@ -48,7 +45,7 @@ namespace solution
 		// 	result[i] = 0;
 		// }
 
-		int block_size = n;
+		int block_size = 128;
 
 #pragma omp parallel num_threads(24)
 		{
@@ -85,14 +82,6 @@ namespace solution
 				}
 			}
 		}
-		for (int i = 0; i < n*n; i++)
-		{
-			if (ver[i] - result[i] < 1e-3 && ver[i] - result[i] > -1e-3)
-			{
-				std::cout << i << " " << ver[i] - result[i] << std::endl;
-			}	
-		}
-		
 
 		// works - 800ms
 		// #pragma omp parallel for collapse(2)
