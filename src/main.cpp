@@ -1,6 +1,6 @@
 #pragma GCC optimize("O3,unroll-loops")
 // #pragma GCC target("avx2,bmi,bmi2,lzcnt,popcnt")
-#pragma GCC target("avx2,bmi,bmi2,lzcnt,popcnt,avx512f")
+#pragma GCC target("bmi,bmi2,lzcnt,popcnt,avx512f")
 #include <iostream>
 #include <fstream>
 #include <memory>
@@ -22,26 +22,26 @@ namespace solution
 	{
 		std::string sol_path = std::filesystem::temp_directory_path() / "student_sol.dat";
 
-		int size = 4194304;
 		int m1_fd = open(m1_path.c_str(), O_RDONLY);
-		float *m1 = static_cast<float *>(mmap(NULL, sizeof(float) * size, PROT_READ, MAP_PRIVATE, m1_fd, 0));
+		float *m1 = static_cast<float *>(mmap(NULL, sizeof(float) * n * k, PROT_READ, MAP_PRIVATE, m1_fd, 0));
 		int m2_fd = open(m2_path.c_str(), O_RDONLY);
-		float *m2 = static_cast<float *>(mmap(NULL, sizeof(float) * size, PROT_READ, MAP_PRIVATE, m2_fd, 0));
+		float *m2 = static_cast<float *>(mmap(NULL, sizeof(float) * k * m, PROT_READ, MAP_PRIVATE, m2_fd, 0));
 
-		int result_fd = open(sol_path.c_str(), O_CREAT | O_RDWR);
-		ftruncate(result_fd, sizeof(float) * size);
-		float *result = reinterpret_cast<float *>(mmap(NULL, sizeof(float) * size, PROT_WRITE, MAP_SHARED, result_fd, 0));
+		int result_fd = open(sol_path.c_str(), O_CREAT | O_RDWR, 0644);
+		ftruncate(result_fd, sizeof(float) * n * m);
+		float *result = static_cast<float *>(mmap(NULL, sizeof(float) * n * m, PROT_WRITE | PROT_READ, MAP_SHARED, result_fd, 0));
 
 		int block_size = 128;
-		int block_count = 16;
+		int block_count = n / block_size;
 
 #pragma omp parallel num_threads(48)
 		{
+			int tid = omp_get_thread_num();
 			cpu_set_t cpuset;
-			CPU_SET(omp_get_thread_num(), &cpuset);
+			CPU_SET(tid, &cpuset);
 			pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
 
-#pragma omp for collapse(2)
+#pragma omp for collapse(2) schedule(dynamic)
 			for (int block_i = 0; block_i < block_count; block_i++)
 			{
 				for (int block_j = 0; block_j < block_count; block_j++)
