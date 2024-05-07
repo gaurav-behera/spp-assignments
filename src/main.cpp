@@ -28,12 +28,12 @@ namespace solution
 
 #pragma omp parallel num_threads(48)
 		{
-			int tid = omp_get_thread_num()/2;
+			int tid = omp_get_thread_num();
 			cpu_set_t cpuset;
 			CPU_SET(tid, &cpuset);
 			pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
 
-#pragma omp for collapse(2) schedule(dynamic)
+#pragma omp for collapse(2) schedule(static)
 			for (int block_i = 0; block_i < block_count; block_i++)
 			{
 				for (int block_j = 0; block_j < block_count; block_j++)
