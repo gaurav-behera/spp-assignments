@@ -7,5 +7,5 @@ if(OpenMP_CXX_FOUND)
     target_link_libraries(studentlib PRIVATE OpenMP::OpenMP_CXX)
 endif()
 
-target_compile_options(studentlib PRIVATE -Ofast -march=native -mtune=native -flto -mavx512f -fno-math-errno -fassociative-math -funsafe-math-optimizations -ffinite-math-only -ffp-contract=fast -funsafe-loop-optimizations -fomit-frame-pointer -fwhole-program)
+target_compile_options(studentlib PRIVATE -Ofast -march=native -mtune=native -flto -mavx512f -fassociative-math -funsafe-math-optimizations -ffinite-math-only -ffp-contract=fast -funsafe-loop-optimizations -fomit-frame-pointer -freciprocal-math -fno-signed-zeros -fno-trapping-math -fno-math-errno -fno-signed-bitfields -ffast-math -fno-rounding-math -fno-signaling-nans)
 

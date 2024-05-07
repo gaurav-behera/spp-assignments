@@ -29,7 +29,7 @@ namespace solution
 
 		int result_fd = open(sol_path.c_str(), O_CREAT | O_RDWR, 0644);
 		ftruncate(result_fd, sizeof(float) * n * m);
-		float *result = reinterpret_cast<float *>(mmap(NULL, sizeof(float) * n * m, PROT_WRITE | PROT_READ, MAP_SHARED, result_fd, 0));
+		float *result = static_cast<float *>(mmap(NULL, sizeof(float) * n * m, PROT_WRITE | PROT_READ, MAP_SHARED, result_fd, 0));
 
 		int block_size = 128;
 		int block_count = n / block_size;
@@ -41,7 +41,7 @@ namespace solution
 			CPU_SET(tid, &cpuset);
 			pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
 
-#pragma omp for collapse(2)
+#pragma omp for collapse(2) schedule(dynamic)
 			for (int block_i = 0; block_i < block_count; block_i++)
 			{
 				for (int block_j = 0; block_j < block_count; block_j++)
