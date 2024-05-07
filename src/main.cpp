@@ -23,7 +23,7 @@ namespace solution
 		ftruncate(result_fd, sizeof(float) * n * m);
 		float *result = static_cast<float *>(mmap(NULL, sizeof(float) * n * m, PROT_WRITE | PROT_READ, MAP_SHARED, result_fd, 0));
 
-		int block_size = 128;
+		int block_size = 64;
 		int block_count = n / block_size;
 
 #pragma omp parallel num_threads(48)
