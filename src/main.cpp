@@ -23,36 +23,36 @@ namespace solution
 		ftruncate(result_fd, sizeof(float) * n * m);
 		float *result = static_cast<float *>(mmap(NULL, sizeof(float) * n * m, PROT_WRITE | PROT_READ, MAP_SHARED, result_fd, 0));
 
-		int block_size = 128;
+		int block_size = 64;
 		int block_count = n / block_size;
 
-#pragma omp parallel num_threads(24)
+#pragma omp parallel num_threads(32)
 		{
-			int tid = omp_get_thread_num() * 2;
+			int tid = omp_get_thread_num();
 			cpu_set_t cpuset;
 			CPU_SET(tid, &cpuset);
 			pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
 
-#pragma omp for collapse(2)
+#pragma omp for collapse(1)
 			for (int m1_i = 0; m1_i < block_count; m1_i++)
 			{
-				for (int m2_j = 0; m2_j < block_count; m2_j++)
+				for (int m1_j = 0; m1_j < block_count; m1_j++)
 				{
-					for (int m1_j = 0; m1_j < block_count; m1_j++)
 					{
-						for (int idx = 0; idx < block_size; idx++)
-						{
-							for (int i = 0; i < block_size; i++)
+						for (int m2_j = 0; m2_j < block_count; m2_j++)
+							for (int idx = 0; idx < block_size; idx++)
 							{
-								for (int j = 0; j < block_size; j += 16)
+								for (int i = 0; i < block_size; i++)
 								{
-									int base1 = (i + m1_i * block_size) * n + (m1_j * block_size + idx);
-									int base2 = (m1_j * block_size + idx) * n + (m2_j * block_size + j);
-									int final_base = (i + m1_i * block_size) * n + (j + m2_j * block_size);
-									_mm512_storeu_ps(&result[final_base], _mm512_fmadd_ps(_mm512_set1_ps(m1[base1]), _mm512_loadu_ps(&m2[base2]), _mm512_loadu_ps(&result[final_base])));
+									for (int j = 0; j < block_size; j += 16)
+									{
+										int base1 = (i + m1_i * block_size) * n + (m1_j * block_size + idx);
+										int base2 = (m1_j * block_size + idx) * n + (m2_j * block_size + j);
+										int final_base = (i + m1_i * block_size) * n + (j + m2_j * block_size);
+										_mm512_storeu_ps(&result[final_base], _mm512_fmadd_ps(_mm512_set1_ps(m1[base1]), _mm512_loadu_ps(&m2[base2]), _mm512_loadu_ps(&result[final_base])));
+									}
 								}
 							}
-						}
 					}
 				}
 			}
