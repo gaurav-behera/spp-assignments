@@ -1,6 +1,8 @@
-#pragma GCC optimize("O3,unroll-loops")
+#pragma GCC optimize("Ofast,unroll-loops")
 // #pragma GCC target("avx2,bmi,bmi2,lzcnt,popcnt")
-#pragma GCC target("avx2,bmi,bmi2,lzcnt,popcnt,avx512f")
+#pragma GCC target("avx512f")
+#include <iostream>
+#include <fstream>
 #include <filesystem>
 #include <omp.h>
 #include <immintrin.h>
@@ -12,16 +14,31 @@ namespace solution
 {
 	std::string compute(const std::string &m1_path, const std::string &m2_path, int n, int k, int m)
 	{
+		// std::string sol_path = std::filesystem::temp_directory_path() / "student_sol.dat";
+
+		// int m1_fd = open(m1_path.c_str(), O_RDONLY);
+		// float *m1 = static_cast<float *>(mmap(NULL, sizeof(float) * n * k, PROT_READ, MAP_PRIVATE, m1_fd, 0));
+		// int m2_fd = open(m2_path.c_str(), O_RDONLY);
+		// float *m2 = static_cast<float *>(mmap(NULL, sizeof(float) * k * m, PROT_READ, MAP_PRIVATE, m2_fd, 0));
+
+		// int result_fd = open(sol_path.c_str(), O_CREAT | O_RDWR, 0644);
+		// ftruncate(result_fd, sizeof(float) * n * m);
+		// float *result = static_cast<float *>(mmap(NULL, sizeof(float) * n * m, PROT_WRITE | PROT_READ, MAP_SHARED, result_fd, 0));
+
 		std::string sol_path = std::filesystem::temp_directory_path() / "student_sol.dat";
+		std::ofstream sol_fs(sol_path, std::ios::binary);
+		std::ifstream m1_fs(m1_path, std::ios::binary), m2_fs(m2_path, std::ios::binary);
+		auto m1 = std::make_unique<float[]>(n * k), m2 = std::make_unique<float[]>(k * m);
+		m1_fs.read(reinterpret_cast<char *>(m1.get()), sizeof(float) * n * k);
+		m2_fs.read(reinterpret_cast<char *>(m2.get()), sizeof(float) * k * m);
+		m1_fs.close();
+		m2_fs.close();
+		auto result = std::make_unique<float[]>(n * m);
 
-		int m1_fd = open(m1_path.c_str(), O_RDONLY);
-		float *m1 = static_cast<float *>(mmap(NULL, sizeof(float) * n * k, PROT_READ, MAP_PRIVATE, m1_fd, 0));
-		int m2_fd = open(m2_path.c_str(), O_RDONLY);
-		float *m2 = static_cast<float *>(mmap(NULL, sizeof(float) * k * m, PROT_READ, MAP_PRIVATE, m2_fd, 0));
-
-		int result_fd = open(sol_path.c_str(), O_CREAT | O_RDWR, 0644);
-		ftruncate(result_fd, sizeof(float) * n * m);
-		float *result = static_cast<float *>(mmap(NULL, sizeof(float) * n * m, PROT_WRITE | PROT_READ, MAP_SHARED, result_fd, 0));
+		for (int i = 0; i < n * m; i++)
+		{
+			result[i] = 0;
+		}
 
 		int block_size = 128;
 		int block_count = n / block_size;
@@ -33,7 +50,7 @@ namespace solution
 			CPU_SET(tid, &cpuset);
 			pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
 
-#pragma omp for collapse(2) schedule(static)
+#pragma omp for collapse(2) schedule(dynamic)
 			for (int block_i = 0; block_i < block_count; block_i++)
 			{
 				for (int block_j = 0; block_j < block_count; block_j++)
@@ -57,7 +74,8 @@ namespace solution
 				}
 			}
 		}
-
+		sol_fs.write(reinterpret_cast<const char *>(result.get()), sizeof(float) * n * m);
+		sol_fs.close();
 		return sol_path;
 	}
 };
