@@ -23,13 +23,13 @@ namespace solution
 		std::string sol_path = std::filesystem::temp_directory_path() / "student_sol.dat";
 
 		int m1_fd = open(m1_path.c_str(), O_RDONLY);
-		float *m1 = static_cast<float *>(mmap(NULL, sizeof(float) * n * k, PROT_READ, MAP_PRIVATE | MAP_POPULATE, m1_fd, 0));
+		float *m1 = static_cast<float *>(mmap(NULL, sizeof(float) * n * k, PROT_READ, MAP_PRIVATE, m1_fd, 0));
 		int m2_fd = open(m2_path.c_str(), O_RDONLY);
-		float *m2 = static_cast<float *>(mmap(NULL, sizeof(float) * k * m, PROT_READ, MAP_PRIVATE | MAP_POPULATE, m2_fd, 0));
+		float *m2 = static_cast<float *>(mmap(NULL, sizeof(float) * k * m, PROT_READ, MAP_PRIVATE, m2_fd, 0));
 
 		int result_fd = open(sol_path.c_str(), O_CREAT | O_RDWR);
 		ftruncate(result_fd, sizeof(float) * n * m);
-		float *result = reinterpret_cast<float *>(mmap(NULL, sizeof(float) * n * m, PROT_WRITE | PROT_READ, MAP_SHARED | MAP_POPULATE, result_fd, 0));
+		float *result = reinterpret_cast<float *>(mmap(NULL, sizeof(float) * n * m, PROT_WRITE | PROT_READ, MAP_SHARED, result_fd, 0));
 
 		int block_size = 128;
 		int block_count = 16;
