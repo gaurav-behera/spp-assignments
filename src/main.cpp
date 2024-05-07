@@ -32,8 +32,9 @@ namespace solution
 		float *result = reinterpret_cast<float *>(mmap(NULL, sizeof(float) * n * m, PROT_WRITE | PROT_READ, MAP_SHARED, result_fd, 0));
 
 		int block_size = 128;
+		int block_count = n/block_size;
 
-#pragma omp parallel num_threads(24)
+#pragma omp parallel num_threads(48)
 		{
 			int tid = omp_get_thread_num() * 2;
 			cpu_set_t cpuset;
@@ -41,11 +42,11 @@ namespace solution
 			pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
 
 #pragma omp for collapse(2)
-			for (int block_i = 0; block_i < n / block_size; block_i++)
+			for (int block_i = 0; block_i < block_count; block_i++)
 			{
-				for (int block_j = 0; block_j < n / block_size; block_j++)
+				for (int block_j = 0; block_j < block_count; block_j++)
 				{
-					for (int sub_block_k = 0; sub_block_k < n / block_size; sub_block_k++)
+					for (int sub_block_k = 0; sub_block_k < block_count; sub_block_k++)
 					{
 						for (int idx = 0; idx < block_size; idx++)
 						{
