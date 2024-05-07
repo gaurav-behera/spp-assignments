@@ -26,14 +26,14 @@ namespace solution
 		int block_size = 128;
 		int block_count = n / block_size;
 
-#pragma omp parallel num_threads(48)
+#pragma omp parallel num_threads(24)
 		{
-			int tid = omp_get_thread_num();
+			int tid = omp_get_thread_num() * 2;
 			cpu_set_t cpuset;
 			CPU_SET(tid, &cpuset);
 			pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
 
-#pragma omp for collapse(2) schedule(dynamic)
+#pragma omp for collapse(2)
 			for (int m1_i = 0; m1_i < block_count; m1_i++)
 			{
 				for (int m2_j = 0; m2_j < block_count; m2_j++)
