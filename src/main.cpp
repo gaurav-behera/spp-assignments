@@ -34,7 +34,7 @@ namespace solution
 		int block_size = 128;
 		int block_count = n / block_size;
 
-#pragma omp parallel num_threads(48)
+#pragma omp parallel num_threads(48) proc_bind(spread)
 		{
 			// int tid = omp_get_thread_num();
 			// cpu_set_t cpuset;
