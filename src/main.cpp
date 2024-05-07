@@ -36,7 +36,7 @@ namespace solution
 
 #pragma omp parallel num_threads(48)
 		{
-			int tid = omp_get_thread_num()/2;
+			int tid = omp_get_thread_num();
 			cpu_set_t cpuset;
 			CPU_SET(tid, &cpuset);
 			pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
