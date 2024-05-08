@@ -18,8 +18,10 @@ namespace solution
 		int size = 16777216;
 
 		int m1_fd = open(m1_path.c_str(), O_RDONLY);
+		posix_fadvise(m1_fd, 0, 0, POSIX_FADV_SEQUENTIAL);
 		float *m1 = static_cast<float *>(mmap(NULL, size, PROT_READ, MAP_PRIVATE, m1_fd, 0));
 		int m2_fd = open(m2_path.c_str(), O_RDONLY);
+		posix_fadvise(m2_fd, 0, 0, POSIX_FADV_SEQUENTIAL);
 		float *m2 = static_cast<float *>(mmap(NULL, size, PROT_READ, MAP_PRIVATE, m2_fd, 0));
 
 		int result_fd = open(sol_path.c_str(), O_CREAT | O_RDWR, 0644);
@@ -41,7 +43,8 @@ namespace solution
 			{
 				for (int block_j = 0; block_j < 16; block_j++)
 				{
-					float temp[16384] __attribute__((aligned(64))) = {0};
+					// float temp[16384] __attribute__((aligned(64))) = {0};
+					alignas(64) float temp[16384] = {0};
 					for (int sub_block_k = 0; sub_block_k < 16; sub_block_k++)
 					{
 						for (int idx = 0; idx < 128; idx++)
