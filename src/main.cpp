@@ -38,6 +38,7 @@ namespace solution
 			{
 				for (int block_j = 0; block_j < block_count; block_j++)
 				{
+					float temp[block_size * block_size] = {0};
 					for (int sub_block_k = 0; sub_block_k < block_count; sub_block_k++)
 					{
 						for (int idx = 0; idx < block_size; idx++)
@@ -48,10 +49,19 @@ namespace solution
 								{
 									int base1 = (i + block_i * block_size) * n + (sub_block_k * block_size + idx);
 									int base2 = (sub_block_k * block_size + idx) * n + (block_j * block_size + j);
-									int final_base = (i + block_i * block_size) * n + (j + block_j * block_size);
-									_mm512_storeu_ps(&result[final_base], _mm512_fmadd_ps(_mm512_set1_ps(m1[base1]), _mm512_loadu_ps(&m2[base2]), _mm512_loadu_ps(&result[final_base])));
+									int temp_base = i * block_size + j;
+									// int final_base = (i + block_i * block_size) * n + (j + block_j * block_size);
+									_mm512_storeu_ps(&temp[temp_base], _mm512_fmadd_ps(_mm512_set1_ps(m1[base1]), _mm512_loadu_ps(&m2[base2]), _mm512_loadu_ps(&temp[temp_base])));
+									// _mm512_storeu_ps(&result[final_base], _mm512_fmadd_ps(_mm512_set1_ps(m1[base1]), _mm512_loadu_ps(&m2[base2]), _mm512_loadu_ps(&result[final_base])));
 								}
 							}
+						}
+					}
+					for (int i = 0; i < block_size; i++)
+					{
+						for (int j = 0; j < block_size; j++)
+						{
+							result[(block_i * block_size + i) * n + (block_j * block_size + j)] = temp[i * block_size + j];
 						}
 					}
 				}
