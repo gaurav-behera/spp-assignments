@@ -31,10 +31,10 @@ namespace solution
 
 #pragma omp parallel num_threads(48)
 		{
-			int tid = omp_get_thread_num();
-			cpu_set_t cpuset;
-			CPU_SET(tid, &cpuset);
-			pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
+			// int tid = omp_get_thread_num();
+			// cpu_set_t cpuset;
+			// CPU_SET(tid, &cpuset);
+			// pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
 
 #pragma omp for collapse(2)
 			for (int block_i = 0; block_i < 16; block_i++)
