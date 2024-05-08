@@ -34,7 +34,7 @@ namespace solution
 			CPU_SET(tid, &cpuset);
 			pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
 
-#pragma omp for collapse(2) schedule(static)
+#pragma omp for collapse(2)
 			for (int block_i = 0; block_i < block_count; block_i++)
 			{
 				for (int block_j = 0; block_j < block_count; block_j++)
