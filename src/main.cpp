@@ -27,6 +27,7 @@ namespace solution
 		posix_memalign(&m2_ptr, 64, size);
 		float *m2 = static_cast<float *>(mmap(m2_ptr, size, PROT_READ, MAP_PRIVATE, m2_fd, 0));
 
+
 		int result_fd = open(sol_path.c_str(), O_CREAT | O_RDWR, 0644);
 		ftruncate(result_fd, size);
 		float *result = static_cast<float *>(mmap(NULL, size, PROT_WRITE | PROT_READ, MAP_SHARED, result_fd, 0));
@@ -34,12 +35,12 @@ namespace solution
 		// int block_size = 128;
 		// int block_count = n / block_size;
 
-#pragma omp parallel num_threads(48)
+#pragma omp parallel num_threads(48) proc_bind(spread)
 		{
-			int tid = omp_get_thread_num();
-			cpu_set_t cpuset;
-			CPU_SET(tid, &cpuset);
-			pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
+			// int tid = omp_get_thread_num();
+			// cpu_set_t cpuset;
+			// CPU_SET(tid, &cpuset);
+			// pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
 
 #pragma omp for collapse(2)
 			for (int block_i = 0; block_i < 16; block_i++)
