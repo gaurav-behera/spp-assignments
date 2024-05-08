@@ -22,7 +22,7 @@ namespace solution
 		int m2_fd = open(m2_path.c_str(), O_RDONLY);
 		float *m2 = static_cast<float *>(mmap(NULL, size, PROT_READ, MAP_PRIVATE, m2_fd, 0));
 
-		int result_fd = open(sol_path.c_str(), O_CREAT | O_RDWR);
+		int result_fd = open(sol_path.c_str(), O_CREAT | O_RDWR, 0644);
 		ftruncate(result_fd, size);
 		float *result = static_cast<float *>(mmap(NULL, size, PROT_WRITE | PROT_READ, MAP_SHARED, result_fd, 0));
 
