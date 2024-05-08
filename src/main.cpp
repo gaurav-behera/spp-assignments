@@ -41,7 +41,7 @@ namespace solution
 			{
 				for (int block_j = 0; block_j < 16; block_j++)
 				{
-					float temp[16384] = {0};
+					float temp[16384] __attribute__((aligned(64))) = {0};
 					for (int sub_block_k = 0; sub_block_k < 16; sub_block_k++)
 					{
 						for (int idx = 0; idx < 128; idx++)
@@ -53,7 +53,7 @@ namespace solution
 									int base1 = (i + block_i * 128) * n + (sub_block_k * 128 + idx);
 									int base2 = (sub_block_k * 128 + idx) * n + (block_j * 128 + j);
 									int temp_base = i * 128 + j;
-									_mm512_storeu_ps(&temp[temp_base], _mm512_fmadd_ps(_mm512_set1_ps(m1[base1]), _mm512_loadu_ps(&m2[base2]), _mm512_loadu_ps(&temp[temp_base])));
+									_mm512_store_ps(&temp[temp_base], _mm512_fmadd_ps(_mm512_set1_ps(m1[base1]), _mm512_loadu_ps(&m2[base2]), _mm512_load_ps(&temp[temp_base])));
 								}
 							}
 						}
