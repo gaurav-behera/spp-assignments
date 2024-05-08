@@ -3,6 +3,7 @@
 #pragma GCC target("avx2,bmi,bmi2,lzcnt,popcnt,avx512f")
 #include <filesystem>
 #include <omp.h>
+#include <cstring>
 #include <immintrin.h>
 #include <unistd.h>
 #include <fcntl.h>
@@ -59,10 +60,7 @@ namespace solution
 					}
 					for (int i = 0; i < block_size; i++)
 					{
-						for (int j = 0; j < block_size; j++)
-						{
-							result[(block_i * block_size + i) * n + (block_j * block_size + j)] = temp[i * block_size + j];
-						}
+						memcpy(&result[(block_i * block_size + i) * n + (block_j * block_size)], &temp[i * block_size], block_size*sizeof(float));
 					}
 				}
 			}
