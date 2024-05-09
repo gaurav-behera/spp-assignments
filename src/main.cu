@@ -40,6 +40,10 @@ namespace solution
                                         if(ni >= 0 and ni < n and nj >= 0 and nj < n) 
                                         {
                                                 sum += kernel_d[(di+1)*3 + dj+1] * img_d[ni * n + nj];
+                                                if (row == 0 && col == 0)
+                                                {
+                                                        printf("%d %d %f\n", row, col, sum);
+                                                }
                                         }
                                 }
                         }
