@@ -82,10 +82,6 @@ namespace solution
                 convolution2D<<<DimGrid, DimBlock>>>(img_d, kernel_d, result_d, num_cols);
                 
                 cudaDeviceSynchronize();
-                for (int i = 0; i < 16; i++)
-                {
-                        std::cout << result[i] << " ";
-                }
                 
                 CUDA_ERROR_CHECK(cudaMemcpy(result, result_d, num_rows * num_cols * sizeof(float), cudaMemcpyDeviceToHost));
 
