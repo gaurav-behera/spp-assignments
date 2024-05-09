@@ -24,6 +24,7 @@ namespace solution
                 }
         }
 
+        #define TILE_WIDTH 128
         __global__ void convolution2D(float *img_d, float *kernel_d, float* result_d, int n, int start_row)
         {
                 int col = blockIdx.x * blockDim.x + threadIdx.x;
@@ -86,8 +87,8 @@ namespace solution
 
                         CUDA_ERROR_CHECK(cudaMalloc((void **)&result_d, num_cols*rows_per_gpu * sizeof(float)));
 
-                        dim3 DimGrid(rows_per_gpu / 8, num_cols / 8, 1);
-                        dim3 DimBlock(8, 8, 1);
+                        dim3 DimGrid(rows_per_gpu / TILE_WIDTH, num_cols / TILE_WIDTH, 1);
+                        dim3 DimBlock(TILE_WIDTH, TILE_WIDTH, 1);
                         convolution2D<<<DimGrid, DimBlock>>>(img_d, kernel_d, result_d, num_cols, start_row);
                         
                         cudaDeviceSynchronize();
