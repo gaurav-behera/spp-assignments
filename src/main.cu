@@ -47,11 +47,11 @@ namespace solution
                                         int ni = ty + di, nj = tx + dj;
                                         if(ni >= 0 and ni < TILE_WIDTH and nj >= 0 and nj < TILE_WIDTH) 
                                         {
-                                                sum += kernel_s[(di+1)*3 + dj+1] * img_s[ni * n + nj];
+                                                sum += kernel_s[di+1][dj+1] * img_s[ni * n + nj];
                                         }
                                         else if(ni >= 0 and ni < n and nj >= 0 and nj < n) 
                                         {
-                                                sum += kernel_s[(di+1)*3 + dj+1] * img_d[ni * n + nj];
+                                                sum += kernel_s[di+1][dj+1] * img_d[ni * n + nj];
                                         }
                                 }
                         }
