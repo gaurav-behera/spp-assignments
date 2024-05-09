@@ -43,7 +43,8 @@ namespace solution
                                         }
                                 }
                         }
-                        result_d[row*n+col] = img_d[row*n+col];
+                        result_d[row*n+col] = sum;
+                        // result_d[row*n+col] = img_d[row*n+col];
                 }
         }
 
