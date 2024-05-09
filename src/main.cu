@@ -27,8 +27,8 @@ namespace solution
         #define TILE_WIDTH 32
         __global__ void convolution2D(float *img_d, float *kernel_d, float* result_d, int n, int gpu_id, int gpu_count)
         {
-                __shared__ float img_s[TILE_WIDTH][TILE_WIDTH];
-                __shared__ float kernel_s[3][3];
+                // __shared__ float img_s[TILE_WIDTH][TILE_WIDTH];
+                // __shared__ float kernel_s[3][3];
 
                 int tx = threadIdx.x, ty = threadIdx.y;
                 int col = blockIdx.x * blockDim.x + tx;
@@ -47,11 +47,11 @@ namespace solution
                                         int ni = ty + di, nj = tx + dj;
                                         if (row+di >= 0 && col+dj >= 0 && row+di < n && col+dj < n)
                                         {
-                                                if(ni >= 0 && ni < TILE_WIDTH && nj >= 0 && nj < TILE_WIDTH) 
-                                                {
-                                                        sum += kernel_s[di+1][dj+1] * img_s[ni][nj];
-                                                }
-                                                else
+                                                // if(ni >= 0 && ni < TILE_WIDTH && nj >= 0 && nj < TILE_WIDTH) 
+                                                // {
+                                                //         sum += kernel_s[di+1][dj+1] * img_s[ni][nj];
+                                                // }
+                                                // else
                                                 {
                                                         sum += kernel_s[di+1][dj+1] * img_d[(row+di) * n + (col+dj)];
                                                 }
@@ -74,7 +74,7 @@ namespace solution
                 float *img = static_cast<float *>(mmap(NULL, sizeof(float) * size, PROT_READ, MAP_PRIVATE, bitmap_fd, 0));
 
                 int result_fd = open(sol_path.c_str(), O_CREAT | O_RDWR, 0644);
-                ftruncate(result_fd, sizeof(float) * size);
+                if (ftruncate(result_fd, sizeof(float) * size) != 0) return sol_path;
                 float *result = reinterpret_cast<float *>(mmap(NULL, sizeof(float) * size, PROT_WRITE | PROT_READ, MAP_SHARED, result_fd, 0));
 
                 float kernel_flat[9];
