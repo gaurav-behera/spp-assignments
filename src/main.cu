@@ -34,12 +34,15 @@ namespace solution
         std::string compute(const std::string &bitmap_path, const float kernel[3][3], const std::int32_t num_rows, const std::int32_t num_cols)
         {
                 std::string sol_path = std::filesystem::temp_directory_path() / "student_sol.bmp";
-                std::ofstream sol_fs(sol_path, std::ios::binary);
-                std::ifstream bitmap_fs(bitmap_path, std::ios::binary);
-                const auto img = std::make_unique<float[]>(num_rows * num_cols);
-                bitmap_fs.read(reinterpret_cast<char *>(img.get()), sizeof(float) * num_rows * num_cols);
-                size_t size = num_cols * num_rows * sizeof(float);
-                float result[num_cols * num_rows];
+
+                int size = num_rows * num_cols;
+
+                int bitmap_fd = open(bitmap_path.c_str(), O_RDONLY);
+		float *img = static_cast<float *>(mmap(NULL, sizeof(float) * size, PROT_READ, MAP_PRIVATE, bitmap_fd, 0));
+
+                int result_fd = open(sol_path.c_str(), O_CREAT | O_RDWR);
+		ftruncate(result_fd, sizeof(float) * size);
+		float *result = reinterpret_cast<float *>(mmap(NULL, sizeof(float) * size, PROT_WRITE | PROT_READ, MAP_SHARED, result_fd, 0));
 
                 float *img_d, *kernel_d, *result_d;
                 cudaMalloc((void**)&img_d, size);
@@ -55,8 +58,6 @@ namespace solution
                 cudaDeviceSynchronize();
 
                 cudaMemcpy(result, result_d, size, cudaMemcpyDeviceToHost);
-
-                sol_fs.write(reinterpret_cast<const char*>(result.get()), size);
 
                 bitmap_fs.close();
                 return sol_path;
