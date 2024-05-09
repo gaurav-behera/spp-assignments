@@ -33,6 +33,8 @@ namespace solution
                 int tx = threadIdx.x, ty = threadIdx.y;
                 int col = blockIdx.x * blockDim.x + tx;
                 int row = blockIdx.y * blockDim.y + ty + gpu_id*n/gpu_count;
+                int row_start = (n/gpu_count)*gpu_id;
+                int row_end = row_start+ n/gpu_count;
                 if (row < n && col < n)
                 {
                         if (tx < 3 && ty < 3)
@@ -45,7 +47,7 @@ namespace solution
                                 for(int dj = -1; dj <= 1; dj++) 
                                 {
                                         int ni = ty + di, nj = tx + dj;
-                                        if (row+di >= 0 && col+dj >= 0 && row+di < n && col+dj < n)
+                                        if (row+di >= row_start && col+dj >= 0 && row+di < n && col+dj < row_end)
                                         {
                                                 if(ni >= 0 and ni < TILE_WIDTH and nj >= 0 and nj < TILE_WIDTH) 
                                                 {
