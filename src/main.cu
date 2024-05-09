@@ -72,10 +72,10 @@ namespace solution
                 const int num_gpus = 1;
                 const int rows_per_gpu = num_rows / num_gpus;
 
-                // #pragma omp parallel for num_threads(num_gpus)
-                // for (int i = 0; i < num_gpus; ++i)
-                // {
-                        int gpu_id = 0;
+                #pragma omp parallel for num_threads(num_gpus)
+                for (int i = 0; i < num_gpus; ++i)
+                {
+                        int gpu_id = i;
 
                         cudaSetDevice(gpu_id);
 
@@ -101,7 +101,7 @@ namespace solution
                         CUDA_ERROR_CHECK(cudaFree(img_d));
                         CUDA_ERROR_CHECK(cudaFree(kernel_d));
                         CUDA_ERROR_CHECK(cudaFree(result_d));
-                // }
+                }
 
                 return sol_path;
         }
