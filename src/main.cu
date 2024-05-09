@@ -68,7 +68,7 @@ namespace solution
                 const int num_gpus = 4;
                 const int rows_per_gpu = num_rows / num_gpus;
 
-                // #pragma omp parallel for num_threads(num_gpus)
+                #pragma omp parallel for num_threads(num_gpus)
                 for (int i = 0; i < num_gpus; ++i)
                 {
                         int gpu_id = i;
