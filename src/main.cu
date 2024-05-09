@@ -24,7 +24,7 @@ namespace solution
                 }
         }
 
-        #define TILE_WIDTH 16
+        #define TILE_WIDTH 32
         __global__ void convolution2D(float *img_d, float *kernel_d, float* result_d, int n, int gpu_id, int gpu_count)
         {
                 __shared__ float img_s[TILE_WIDTH][TILE_WIDTH];
@@ -93,7 +93,7 @@ namespace solution
                         CUDA_ERROR_CHECK(cudaMalloc((void**)&kernel_d, 9 * sizeof(float)));
                         CUDA_ERROR_CHECK(cudaMemcpy(kernel_d, kernel_flat, 9 * sizeof(float), cudaMemcpyHostToDevice));
         
-                        CUDA_ERROR_CHECK(cudaMalloc((void **)&result_d, size * sizeof(float)/gpu_count));
+                        CUDA_ERROR_CHECK(cudaMalloc((void **)&result_d, (size/gpu_count) * sizeof(float)));
         
                         dim3 DimGrid(num_rows / (gpu_count * TILE_WIDTH), num_cols / TILE_WIDTH, 1);
                         dim3 DimBlock(TILE_WIDTH, TILE_WIDTH, 1);
@@ -102,7 +102,7 @@ namespace solution
                         
                         cudaDeviceSynchronize();
                         
-                        CUDA_ERROR_CHECK(cudaMemcpy(result + gpu_id*size/gpu_count, result_d, size * sizeof(float) / gpu_count, cudaMemcpyDeviceToHost));
+                        CUDA_ERROR_CHECK(cudaMemcpy(result + (size/gpu_count)*gpu_id, result_d, (size/gpu_count) * sizeof(float) , cudaMemcpyDeviceToHost));
                 }
 
 
