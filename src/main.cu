@@ -102,7 +102,7 @@ namespace solution
         
                         CUDA_ERROR_CHECK(cudaMalloc((void **)&result_d, (size/gpu_count) * sizeof(float)));
         
-                        dim3 DimGrid(num_rows / (gpu_count * TILE_WIDTH), num_cols / TILE_WIDTH, 1);
+                        dim3 DimGrid(num_rows / TILE_WIDTH , num_cols / (gpu_count * TILE_WIDTH), 1);
                         dim3 DimBlock(TILE_WIDTH, TILE_WIDTH, 1);
 
                         convolution2D<<<DimGrid, DimBlock>>>(img_d, result_d, num_cols, gpu_id, gpu_count);
