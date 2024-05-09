@@ -47,7 +47,7 @@ namespace solution
                                 for(int dj = -1; dj <= 1; dj++) 
                                 {
                                         int ni = ty + di, nj = tx + dj;
-                                        if (row+di >= row_start && col+dj >= 0 && row+di < n && col+dj < row_end)
+                                        if (row+di >= row_start && col+dj >= 0 && row+di < row_end && col+dj < n)
                                         {
                                                 if(ni >= 0 and ni < TILE_WIDTH and nj >= 0 and nj < TILE_WIDTH) 
                                                 {
