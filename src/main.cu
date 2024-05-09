@@ -27,13 +27,11 @@ namespace solution
 
         __global__ void convolution2D(float *img_d, float *kernel_d, float* result_d, int n, int start_row)
         {
-                // __shared__ float img_s[TILE_WIDTH+2][TILE_WIDTH+2];
-                // __shared__ float kernel_s[3][3];
-
                 int col = blockIdx.x * blockDim.x + threadIdx.x;
                 int row = blockIdx.y * blockDim.y + threadIdx.y + start_row;
                 
-                // img_s
+                if (row < n and col < n)
+                {
                         float sum = 0.0;
                         for(int di = -1; di <= 1; di++)
                         {
@@ -47,7 +45,7 @@ namespace solution
                                 }
                         }
                         result_d[(row-start_row)*n+col] = sum;
-                
+                }
         }
 
         std::string compute(const std::string &bitmap_path, const float kernel[3][3], const std::int32_t num_rows, const std::int32_t num_cols)
@@ -92,7 +90,10 @@ namespace solution
 
                         dim3 DimGrid(rows_per_gpu / TILE_WIDTH, num_cols / TILE_WIDTH, 1);
                         dim3 DimBlock(TILE_WIDTH, TILE_WIDTH, 1);
+
+                        std::cout << "Kernel " << i << "start" << std::endl;
                         convolution2D<<<DimGrid, DimBlock>>>(img_d, kernel_d, result_d, num_cols, start_row);
+                        std::cout << "Kernel " << i << "end" << std::endl;
                         
                         cudaDeviceSynchronize();
                         
