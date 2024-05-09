@@ -30,10 +30,10 @@ namespace solution
         __global__ void convolution2D(float *img_d, float* result_d, int n, int gpu_id, int gpu_count)
         {
                 __shared__ float img_s[TILE_WIDTH][TILE_WIDTH];
-                float kernel[3][3] = 
+                float kernel[3][3] = {
                         { 0.0625f, 0.125f, 0.0625f },
                         { 0.125f, 0.25f, 0.125f },
-                        { 0.0625f, 0.125f, 0.0625f };
+                        { 0.0625f, 0.125f, 0.0625f } };
 
                 int tx = threadIdx.x, ty = threadIdx.y;
                 int row = blockIdx.y * blockDim.y + ty + gpu_id*n/gpu_count;
