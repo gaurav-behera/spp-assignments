@@ -65,7 +65,7 @@ namespace solution
                 {
                         kernel_flat[i] = kernel[i/3][i%3];
                 }
-                cudaSetDevice(gpu_id);
+                cudaSetDevice(0);
 
                 float *img_d, *kernel_d, *result_d;
                 CUDA_ERROR_CHECK(cudaMalloc((void**)&img_d, size * sizeof(float)));
