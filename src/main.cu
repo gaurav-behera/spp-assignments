@@ -39,11 +39,11 @@ namespace solution
                 const auto img = std::make_unique<float[]>(num_rows * num_cols);
                 bitmap_fs.read(reinterpret_cast<char *>(img.get()), sizeof(float) * num_rows * num_cols);
                 size_t size = num_cols * num_rows * sizeof(float);
-                auto result = std::make_unique<float[]>(num_cols * num_rows);
+                float result[num_cols * num_rows];
 
                 float *img_d, *kernel_d, *result_d;
                 cudaMalloc((void**)&img_d, size);
-                cudaMemcpy(img_d, img, size, cudaMemcpyHostToDevice);
+                cudaMemcpy(img_d, img.get(), size, cudaMemcpyHostToDevice);
 
                 cudaMalloc((void**)&kernel_d, 9 * sizeof(float));
                 cudaMemcpy(kernel_d, kernel, 9 * sizeof(float), cudaMemcpyHostToDevice);
