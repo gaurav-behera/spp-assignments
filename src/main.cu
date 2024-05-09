@@ -49,7 +49,7 @@ namespace solution
 
                 float *img_d, *kernel_d, *result_d;
                 cudaMalloc((void**)&img_d, size);
-                cudaMemcpy(img_d, img.get(), size, cudaMemcpyHostToDevice);
+                cudaMemcpy(img_d, img, size, cudaMemcpyHostToDevice);
 
                 cudaMalloc((void**)&kernel_d, 9 * sizeof(float));
                 cudaMemcpy(kernel_d, kernel, 9 * sizeof(float), cudaMemcpyHostToDevice);
@@ -61,8 +61,6 @@ namespace solution
                 cudaDeviceSynchronize();
 
                 cudaMemcpy(result, result_d, size, cudaMemcpyDeviceToHost);
-
-                bitmap_fs.close();
                 return sol_path;
         }
 };
