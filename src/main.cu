@@ -37,7 +37,7 @@ namespace solution
                 {
                         if (tx < 3 && ty < 3)
                                 kernel_s[tx][ty] = kernel_d[tx*3+ty];
-                        img_s[tx][ty] = img_d[row*n+col];
+                        // img_s[tx][ty] = img_d[row*n+col];
                         __syncthreads();
                         float sum = 0.0;
                         for(int di = -1; di <= 1; di++)
