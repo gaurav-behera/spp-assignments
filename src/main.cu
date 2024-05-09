@@ -36,7 +36,7 @@ namespace solution
                 if (row < n && col < n)
                 {
                         if (tx < 3 && ty < 3)
-                                kernel_s[row][col] = kernel_d[row][col];
+                                kernel_s[tx][ty] = kernel_d[tx][ty];
                         img_s[tx][ty] = img_d[row][col];
                         __syncthreads();
                         float sum = 0.0;
@@ -47,11 +47,11 @@ namespace solution
                                         int ni = ty + di, nj = tx + dj;
                                         if(ni >= 0 and ni < TILE_WIDTH and nj >= 0 and nj < TILE_WIDTH) 
                                         {
-                                                sum += kernel_s[di+1][dj+1] * img_s[ni * n + nj];
+                                                sum += kernel_s[di+1][dj+1] * img_s[ni][nj];
                                         }
                                         else if(ni >= 0 and ni < n and nj >= 0 and nj < n) 
                                         {
-                                                sum += kernel_s[di+1][dj+1] * img_d[ni * n + nj];
+                                                sum += kernel_s[di+1][dj+1] * img_d[(row+di) * n + (col+dj)];
                                         }
                                 }
                         }
