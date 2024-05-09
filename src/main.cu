@@ -85,7 +85,7 @@ namespace solution
                 // {
                 //         kernel_flat[i] = kernel[i/3][i%3];
                 // }
-                int gpu_count = 2;
+                int gpu_count = 4;
                 #pragma omp parallel for num_threads(gpu_count)
                 for (int gpu_id = 0; gpu_id < gpu_count; gpu_id++)
                 {
@@ -106,7 +106,7 @@ namespace solution
                         dim3 DimBlock(TILE_WIDTH, TILE_WIDTH, 1);
 
                         convolution2D<<<DimGrid, DimBlock>>>(img_d, result_d, num_cols, gpu_id, gpu_count);
-                        std::cout << "kernel " << gpu_id << " dont" << (size/gpu_count)*gpu_id << " " << std::endl;
+                        // std::cout << "kernel " << gpu_id << " dont" << (size/gpu_count)*gpu_id << " " << std::endl;
                         
                         cudaDeviceSynchronize();
                         
