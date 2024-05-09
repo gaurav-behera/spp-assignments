@@ -92,7 +92,7 @@ namespace solution
                         
                         cudaDeviceSynchronize();
                         
-                        CUDA_ERROR_CHECK(cudaMemcpy(&result[start_row * num_cols], result_d, rows_per_gpu * num_cols * sizeof(float), cudaMemcpyDeviceToHost));
+                        CUDA_ERROR_CHECK(cudaMemcpy(result + start_row * num_cols, result_d, rows_per_gpu * num_cols * sizeof(float), cudaMemcpyDeviceToHost));
 
                         CUDA_ERROR_CHECK(cudaFree(img_d));
                         CUDA_ERROR_CHECK(cudaFree(kernel_d));
