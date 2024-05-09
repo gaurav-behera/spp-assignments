@@ -29,7 +29,7 @@ namespace solution
         #define TILE_WIDTH 32
         __global__ void convolution2D(float *img_d, float* result_d, int n, int gpu_id, int gpu_count)
         {
-                __shared__ float img_s[TILE_WIDTH][TILE_WIDTH];
+                // __shared__ float img_s[TILE_WIDTH][TILE_WIDTH];
                 float kernel[3][3] = {
                         { 0.0625f, 0.125f, 0.0625f },
                         { 0.125f, 0.25f, 0.125f },
@@ -40,8 +40,8 @@ namespace solution
                 int col = blockIdx.x * blockDim.x + tx;
                 if (row < n && col < n)
                 {
-                        img_s[tx][ty] = img_d[row*n+col];
-                        __syncthreads();
+                        // img_s[tx][ty] = img_d[row*n+col];
+                        // __syncthreads();
                         float sum = 0.0;
                         for(int di = -1; di <= 1; di++)
                         {
@@ -49,11 +49,15 @@ namespace solution
                                 {
                                         int ni = ty + di, nj = tx + dj;
                                 
-                                        if(ni >= 0 && ni < TILE_WIDTH && nj >= 0 && nj < TILE_WIDTH) 
-                                        {
-                                                sum += kernel[di+1][dj+1] * img_s[ni][nj];
-                                        }
-                                        else if (row+di >= 0 && col+dj >= 0 && row+di < n && col+dj < n)
+                                        // if(ni >= 0 && ni < TILE_WIDTH && nj >= 0 && nj < TILE_WIDTH) 
+                                        // {
+                                        //         sum += kernel[di+1][dj+1] * img_s[ni][nj];
+                                        // }
+                                        // else if (row+di >= 0 && col+dj >= 0 && row+di < n && col+dj < n)
+                                        // {
+                                        //         sum += kernel[di+1][dj+1] * img_d[(row+di) * n + (col+dj)];
+                                        // }
+                                        if (row+di >= 0 && col+dj >= 0 && row+di < n && col+dj < n)
                                         {
                                                 sum += kernel[di+1][dj+1] * img_d[(row+di) * n + (col+dj)];
                                         }
@@ -89,7 +93,7 @@ namespace solution
                         //         break;
                         // }
                         cudaSetDevice(gpu_id);
-                        float *img_d, *kernel_d, *result_d;
+                        float *img_d, *result_d;
                         CUDA_ERROR_CHECK(cudaMalloc((void**)&img_d, size * sizeof(float)));
                         CUDA_ERROR_CHECK(cudaMemcpy(img_d, img, size * sizeof(float), cudaMemcpyHostToDevice));
         
