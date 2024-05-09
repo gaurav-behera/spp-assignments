@@ -65,7 +65,7 @@ namespace solution
                         kernel_flat[i] = kernel[i/3][i%3];
                 }
 
-                const int num_gpus = 2;
+                const int num_gpus = 1;
                 const int rows_per_gpu = num_rows / num_gpus;
 
                 #pragma omp parallel for num_threads(num_gpus)
