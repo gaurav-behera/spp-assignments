@@ -68,7 +68,7 @@ namespace solution
                 const int num_gpus = 4;
                 const int rows_per_gpu = num_rows / num_gpus;
 
-                #pragma omp parallel for num_threads(num_gpus)
+                // #pragma omp parallel for num_threads(num_gpus)
                 for (int i = 0; i < num_gpus; ++i)
                 {
                         int gpu_id = i;
@@ -76,8 +76,6 @@ namespace solution
                         cudaSetDevice(gpu_id);
 
                         int start_row = gpu_id * rows_per_gpu;
-                        int end_row = start_row + rows_per_gpu;
-
 
                         float *img_d, *kernel_d, *result_d;
                         CUDA_ERROR_CHECK(cudaMalloc((void**)&img_d, size * sizeof(float)));
@@ -94,7 +92,7 @@ namespace solution
                         
                         cudaDeviceSynchronize();
                         
-                        CUDA_ERROR_CHECK(cudaMemcpy(result + start_row * num_cols, result_d, rows_per_gpu * num_cols * sizeof(float), cudaMemcpyDeviceToHost));
+                        CUDA_ERROR_CHECK(cudaMemcpy(&result[start_row * num_cols], result_d, rows_per_gpu * num_cols * sizeof(float), cudaMemcpyDeviceToHost));
 
                         CUDA_ERROR_CHECK(cudaFree(img_d));
                         CUDA_ERROR_CHECK(cudaFree(kernel_d));
