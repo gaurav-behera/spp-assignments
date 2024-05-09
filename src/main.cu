@@ -33,8 +33,6 @@ namespace solution
                 int tx = threadIdx.x, ty = threadIdx.y;
                 int col = blockIdx.x * blockDim.x + tx;
                 int row = blockIdx.y * blockDim.y + ty + gpu_id*n/gpu_count;
-                int row_start = (n/gpu_count)*gpu_id;
-                int row_end = row_start+ n/gpu_count;
                 if (row < n && col < n)
                 {
                         if (tx < 3 && ty < 3)
@@ -47,9 +45,9 @@ namespace solution
                                 for(int dj = -1; dj <= 1; dj++) 
                                 {
                                         int ni = ty + di, nj = tx + dj;
-                                        if (row+di >= row_start && col+dj >= 0 && row+di < row_end && col+dj < n)
+                                        if (row+di >= 0 && col+dj >= 0 && row+di < n && col+dj < n)
                                         {
-                                                if(ni >= 0 and ni < TILE_WIDTH and nj >= 0 and nj < TILE_WIDTH) 
+                                                if(ni >= 0 && ni < TILE_WIDTH && nj >= 0 && nj < TILE_WIDTH) 
                                                 {
                                                         sum += kernel_s[di+1][dj+1] * img_s[ni][nj];
                                                 }
@@ -84,7 +82,8 @@ namespace solution
                 {
                         kernel_flat[i] = kernel[i/3][i%3];
                 }
-                int gpu_count = 4;
+                int gpu_count = 1;
+                #pragma omp parallel for num_threads(gpu_count)
                 for (int gpu_id = 0; gpu_id < gpu_count; gpu_id++)
                 {
                         cudaSetDevice(gpu_id);
