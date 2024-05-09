@@ -28,15 +28,15 @@ namespace solution
         __global__ void convolution2D(float *img_d, float *kernel_d, float* result_d, int n, int gpu_id, int gpu_count)
         {
                 // __shared__ float img_s[TILE_WIDTH][TILE_WIDTH];
-                __shared__ float kernel_s[3][3];
+                // __shared__ float kernel_s[3][3];
 
                 int tx = threadIdx.x, ty = threadIdx.y;
                 int col = blockIdx.x * blockDim.x + tx;
                 int row = blockIdx.y * blockDim.y + ty + gpu_id*n/gpu_count;
                 if (row < n && col < n)
                 {
-                        if (tx < 3 && ty < 3)
-                                kernel_s[tx][ty] = kernel_d[tx*3+ty];
+                        // if (tx < 3 && ty < 3)
+                        //         kernel_s[tx][ty] = kernel_d[tx*3+ty];
                         // img_s[tx][ty] = img_d[row*n+col];
                         __syncthreads();
                         float sum = 0.0;
@@ -44,7 +44,7 @@ namespace solution
                         {
                                 for(int dj = -1; dj <= 1; dj++) 
                                 {
-                                        int ni = ty + di, nj = tx + dj;
+                                        // int ni = ty + di, nj = tx + dj;
                                         if (row+di >= 0 && col+dj >= 0 && row+di < n && col+dj < n)
                                         {
                                                 // if(ni >= 0 && ni < TILE_WIDTH && nj >= 0 && nj < TILE_WIDTH) 
@@ -53,7 +53,8 @@ namespace solution
                                                 // }
                                                 // else
                                                 {
-                                                        sum += kernel_s[di+1][dj+1] * img_d[(row+di) * n + (col+dj)];
+                                                        sum += kernel_d[(di+1)*3+dj+1] * img_d[(row+di) * n + (col+dj)];
+                                                        // sum += kernel_s[di+1][dj+1] * img_d[(row+di) * n + (col+dj)];
                                                 }
                                                 
                                         }
