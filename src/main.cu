@@ -85,7 +85,7 @@ namespace solution
                 // {
                 //         kernel_flat[i] = kernel[i/3][i%3];
                 // }
-                int gpu_count = 4;
+                int gpu_count = 1;
                 #pragma omp parallel for num_threads(gpu_count)
                 for (int gpu_id = 0; gpu_id < gpu_count; gpu_id++)
                 {
