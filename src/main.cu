@@ -43,7 +43,7 @@ namespace solution
                 int bitmap_fd = open(bitmap_path.c_str(), O_RDONLY);
 		float *img = static_cast<float *>(mmap(NULL, sizeof(float) * size, PROT_READ, MAP_PRIVATE, bitmap_fd, 0));
 
-                int result_fd = open(sol_path.c_str(), O_CREAT | O_RDWR);
+                int result_fd = open(sol_path.c_str(), O_CREAT | O_RDWR, 0644);
 		ftruncate(result_fd, sizeof(float) * size);
 		float *result = reinterpret_cast<float *>(mmap(NULL, sizeof(float) * size, PROT_WRITE | PROT_READ, MAP_SHARED, result_fd, 0));
 
