@@ -10,6 +10,7 @@
 
 namespace solution
 {
+        #define TILE_WIDTH 128
 #define CUDA_ERROR_CHECK(ans)                          \
         {                                              \
                 cudaAssert((ans), __FILE__, __LINE__); \
@@ -26,10 +27,13 @@ namespace solution
 
         __global__ void convolution2D(float *img_d, float *kernel_d, float* result_d, int n, int start_row)
         {
+                // __shared__ float img_s[TILE_WIDTH+2][TILE_WIDTH+2];
+                // __shared__ float kernel_s[3][3];
+
                 int col = blockIdx.x * blockDim.x + threadIdx.x;
-                int row = blockIdx.y * blockDim.y + threadIdx.y + start_row;
-                if (row < n && col < n)
-                {
+                int row = blockIdx.y * blockDim.y + threadIdx.y;
+                
+                // img_s
                         float sum = 0.0;
                         for(int di = -1; di <= 1; di++)
                         {
@@ -42,8 +46,8 @@ namespace solution
                                         }
                                 }
                         }
-                        result_d[(row-start_row)*n+col] = sum;
-                }
+                        result_d[row*n+col] = sum;
+                
         }
 
         std::string compute(const std::string &bitmap_path, const float kernel[3][3], const std::int32_t num_rows, const std::int32_t num_cols)
@@ -68,10 +72,10 @@ namespace solution
                 const int num_gpus = 1;
                 const int rows_per_gpu = num_rows / num_gpus;
 
-                #pragma omp parallel for num_threads(num_gpus)
-                for (int i = 0; i < num_gpus; ++i)
-                {
-                        int gpu_id = i;
+                // #pragma omp parallel for num_threads(num_gpus)
+                // for (int i = 0; i < num_gpus; ++i)
+                // {
+                        int gpu_id = 0;
 
                         cudaSetDevice(gpu_id);
 
@@ -86,8 +90,8 @@ namespace solution
 
                         CUDA_ERROR_CHECK(cudaMalloc((void **)&result_d, num_cols*rows_per_gpu * sizeof(float)));
 
-                        dim3 DimGrid(rows_per_gpu / 8, num_cols / 8, 1);
-                        dim3 DimBlock(8, 8, 1);
+                        dim3 DimGrid(rows_per_gpu / TILE_WIDTH, num_cols / TILE_WIDTH, 1);
+                        dim3 DimBlock(TILE_WIDTH, TILE_WIDTH, 1);
                         convolution2D<<<DimGrid, DimBlock>>>(img_d, kernel_d, result_d, num_cols, start_row);
                         
                         cudaDeviceSynchronize();
@@ -97,7 +101,7 @@ namespace solution
                         CUDA_ERROR_CHECK(cudaFree(img_d));
                         CUDA_ERROR_CHECK(cudaFree(kernel_d));
                         CUDA_ERROR_CHECK(cudaFree(result_d));
-                }
+                // }
 
                 return sol_path;
         }
