@@ -39,10 +39,14 @@ namespace solution
 		                        if(ni >= 0 and ni < n and nj >= 0 and nj < n) 
                                         {
 		            	                sum += kernel_d[(di+1)*3 + dj+1] * img_d[ni * n + nj];
+                                                // if (row == 7 && col == 0)
+                                                //         printf("%d %d %f\n", row, col, sum);
                                         }
                                 }
 	        	}
                         result_d[row*n+col] = sum;
+                        // if (row == 0 && col == 0)
+                                // printf("%f\n", sum);
                 }
         }
 
@@ -59,14 +63,17 @@ namespace solution
 		ftruncate(result_fd, sizeof(float) * size);
 		float *result = reinterpret_cast<float *>(mmap(NULL, sizeof(float) * size, PROT_WRITE | PROT_READ, MAP_SHARED, result_fd, 0));
 
+                float kernel_flat[9];
+                std::copy(&kernel[0][0], &kernel[0][0] + 9, kernel_flat);
+
                 float *img_d, *kernel_d, *result_d;
-                cudaMalloc((void**)&img_d, size);
-                cudaMemcpy(img_d, img, size, cudaMemcpyHostToDevice);
+                cudaMalloc((void**)&img_d, size*sizeof(float));
+                cudaMemcpy(img_d, img, size*sizeof(float), cudaMemcpyHostToDevice);
 
                 cudaMalloc((void**)&kernel_d, 9 * sizeof(float));
-                cudaMemcpy(kernel_d, kernel, 9 * sizeof(float), cudaMemcpyHostToDevice);
+                cudaMemcpy(kernel_d, kernel_flat, 9 * sizeof(float), cudaMemcpyHostToDevice);
 
-                cudaMalloc((void **) &result_d, size);
+                cudaMalloc((void **) &result_d, size*sizeof(float));
 
                 dim3 DimGrid(num_rows/8, num_cols/8, 1);
                 dim3 DimBlock(8,8,1);
@@ -74,7 +81,13 @@ namespace solution
 
                 cudaDeviceSynchronize();
 
-                cudaMemcpy(result, result_d, size, cudaMemcpyDeviceToHost);
+                // for(int i = 0; i< size; i++)
+                // {
+                //         std::cout << result[i] << " ";
+                // }
+                // std::cout << std::endl;
+
+                cudaMemcpy(result, result_d, size*sizeof(float), cudaMemcpyDeviceToHost);
                 return sol_path;
         }
 };
