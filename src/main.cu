@@ -27,19 +27,31 @@ namespace solution
         #define TILE_WIDTH 32
         __global__ void convolution2D(float *img_d, float *kernel_d, float* result_d, int n)
         {
-                int col = blockIdx.x * blockDim.x + threadIdx.x;
-                int row = blockIdx.y * blockDim.y + threadIdx.y;
+                __shared__ float img_s[TILE_WIDTH][TILE_WIDTH];
+                __shared__ float kernel_s[3][3];
+
+                int tx = threadIdx.x, ty = threadIdx.y;
+                int col = blockIdx.x * blockDim.x + tx;
+                int row = blockIdx.y * blockDim.y + ty;
                 if (row < n && col < n)
                 {
+                        if (tx < 3 && ty < 3)
+                                kernel_s[row][col] = kernel_d[row][col];
+                        img_s[tx][ty] = img_d[row][col];
+                        __syncthreads();
                         float sum = 0.0;
                         for(int di = -1; di <= 1; di++)
                         {
                                 for(int dj = -1; dj <= 1; dj++) 
                                 {
-                                        int ni = row + di, nj = col + dj;
-                                        if(ni >= 0 and ni < n and nj >= 0 and nj < n) 
+                                        int ni = ty + di, nj = tx + dj;
+                                        if(ni >= 0 and ni < TILE_WIDTH and nj >= 0 and nj < TILE_WIDTH) 
                                         {
-                                                sum += kernel_d[(di+1)*3 + dj+1] * img_d[ni * n + nj];
+                                                sum += kernel_s[(di+1)*3 + dj+1] * img_s[ni * n + nj];
+                                        }
+                                        else if(ni >= 0 and ni < n and nj >= 0 and nj < n) 
+                                        {
+                                                sum += kernel_s[(di+1)*3 + dj+1] * img_d[ni * n + nj];
                                         }
                                 }
                         }
