@@ -45,13 +45,17 @@ namespace solution
                                 for(int dj = -1; dj <= 1; dj++) 
                                 {
                                         int ni = ty + di, nj = tx + dj;
-                                        if(ni >= 0 and ni < TILE_WIDTH and nj >= 0 and nj < TILE_WIDTH) 
+                                        if (row+di > 0 && col+dj > 0 && row+di < n && col+dj < n)
                                         {
-                                                sum += kernel_s[di+1][dj+1] * img_s[ni][nj];
-                                        }
-                                        else if(ni >= 0 and ni < n and nj >= 0 and nj < n) 
-                                        {
-                                                sum += kernel_s[di+1][dj+1] * img_d[(row+di) * n + (col+dj)];
+                                                if(ni >= 0 and ni < TILE_WIDTH and nj >= 0 and nj < TILE_WIDTH) 
+                                                {
+                                                        sum += kernel_s[di+1][dj+1] * img_s[ni][nj];
+                                                }
+                                                else
+                                                {
+                                                        sum += kernel_s[di+1][dj+1] * img_d[(row+di) * n + (col+dj)];
+                                                }
+                                                
                                         }
                                 }
                         }
