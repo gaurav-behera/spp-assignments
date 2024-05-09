@@ -31,7 +31,7 @@ namespace solution
                 // __shared__ float kernel_s[3][3];
 
                 int col = blockIdx.x * blockDim.x + threadIdx.x;
-                int row = blockIdx.y * blockDim.y + threadIdx.y + start_row/n;
+                int row = blockIdx.y * blockDim.y + threadIdx.y + start_row;
                 
                 // img_s
                         float sum = 0.0;
@@ -46,7 +46,7 @@ namespace solution
                                         }
                                 }
                         }
-                        result_d[row*n-start_row+col] = sum;
+                        result_d[(row-start_row)*n+col] = sum;
                 
         }
 
