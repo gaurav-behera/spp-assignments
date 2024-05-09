@@ -25,14 +25,14 @@ namespace solution
         }
 
         #define TILE_WIDTH 16
-        __global__ void convolution2D(float *img_d, float *kernel_d, float* result_d, int n)
+        __global__ void convolution2D(float *img_d, float *kernel_d, float* result_d, int n, int gpu_id, int gpu_count)
         {
                 __shared__ float img_s[TILE_WIDTH][TILE_WIDTH];
                 __shared__ float kernel_s[3][3];
 
                 int tx = threadIdx.x, ty = threadIdx.y;
                 int col = blockIdx.x * blockDim.x + tx;
-                int row = blockIdx.y * blockDim.y + ty;
+                int row = blockIdx.y * blockDim.y + ty + gpu_id*n/gpu_count;
                 if (row < n && col < n)
                 {
                         if (tx < 3 && ty < 3)
@@ -59,7 +59,7 @@ namespace solution
                                         }
                                 }
                         }
-                        result_d[row*n+col] = sum;
+                        result_d[(row - gpu_id*n/gpu_count)*n+col] = sum;
                         // result_d[row*n+col] = img_d[row*n+col];
                 }
         }
@@ -82,24 +82,29 @@ namespace solution
                 {
                         kernel_flat[i] = kernel[i/3][i%3];
                 }
-                cudaSetDevice(0);
+                int gpu_count = 4;
+                for (int gpu_id = 0; gpu_id < gpu_count; gpu_id++)
+                {
+                        cudaSetDevice(gpu_id);
+                        float *img_d, *kernel_d, *result_d;
+                        CUDA_ERROR_CHECK(cudaMalloc((void**)&img_d, size * sizeof(float)));
+                        CUDA_ERROR_CHECK(cudaMemcpy(img_d, img, size * sizeof(float), cudaMemcpyHostToDevice));
+        
+                        CUDA_ERROR_CHECK(cudaMalloc((void**)&kernel_d, 9 * sizeof(float)));
+                        CUDA_ERROR_CHECK(cudaMemcpy(kernel_d, kernel_flat, 9 * sizeof(float), cudaMemcpyHostToDevice));
+        
+                        CUDA_ERROR_CHECK(cudaMalloc((void **)&result_d, size * sizeof(float)/gpu_count));
+        
+                        dim3 DimGrid(num_rows / (gpu_count * TILE_WIDTH), num_cols / TILE_WIDTH, 1);
+                        dim3 DimBlock(TILE_WIDTH, TILE_WIDTH, 1);
 
-                float *img_d, *kernel_d, *result_d;
-                CUDA_ERROR_CHECK(cudaMalloc((void**)&img_d, size * sizeof(float)));
-                CUDA_ERROR_CHECK(cudaMemcpy(img_d, img, size * sizeof(float), cudaMemcpyHostToDevice));
+                        convolution2D<<<DimGrid, DimBlock>>>(img_d, kernel_d, result_d, num_cols, gpu_id, gpu_count);
+                        
+                        cudaDeviceSynchronize();
+                        
+                        CUDA_ERROR_CHECK(cudaMemcpy(result + gpu_id*size/gpu_count, result_d, size * sizeof(float) / gpu_count, cudaMemcpyDeviceToHost));
+                }
 
-                CUDA_ERROR_CHECK(cudaMalloc((void**)&kernel_d, 9 * sizeof(float)));
-                CUDA_ERROR_CHECK(cudaMemcpy(kernel_d, kernel_flat, 9 * sizeof(float), cudaMemcpyHostToDevice));
-
-                CUDA_ERROR_CHECK(cudaMalloc((void **)&result_d, size * sizeof(float)));
-
-                dim3 DimGrid(num_rows / TILE_WIDTH, num_cols / TILE_WIDTH, 1);
-                dim3 DimBlock(TILE_WIDTH, TILE_WIDTH, 1);
-                convolution2D<<<DimGrid, DimBlock>>>(img_d, kernel_d, result_d, num_cols);
-                
-                cudaDeviceSynchronize();
-                
-                CUDA_ERROR_CHECK(cudaMemcpy(result, result_d, num_rows * num_cols * sizeof(float), cudaMemcpyDeviceToHost));
 
                 return sol_path;
         }
