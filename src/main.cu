@@ -33,8 +33,8 @@ namespace solution
                 __shared__ float kernel_s[3][3];
 
                 int tx = threadIdx.x, ty = threadIdx.y;
-                int col = blockIdx.x * blockDim.x + tx;
                 int row = blockIdx.y * blockDim.y + ty + gpu_id*n/gpu_count;
+                int col = blockIdx.x * blockDim.x + tx;
                 if (row < n && col < n)
                 {
                         if (tx < 3 && ty < 3)
@@ -47,17 +47,14 @@ namespace solution
                                 for(int dj = -1; dj <= 1; dj++) 
                                 {
                                         int ni = ty + di, nj = tx + dj;
-                                        if (row+di >= 0 && col+dj >= 0 && row+di < n && col+dj < n)
+                                
+                                        if(ni >= 0 && ni < TILE_WIDTH && nj >= 0 && nj < TILE_WIDTH) 
                                         {
-                                                if(ni >= 0 && ni < TILE_WIDTH && nj >= 0 && nj < TILE_WIDTH) 
-                                                {
-                                                        sum += kernel_s[di+1][dj+1] * img_s[ni][nj];
-                                                }
-                                                else
-                                                {
-                                                        sum += kernel_s[di+1][dj+1] * img_d[(row+di) * n + (col+dj)];
-                                                }
-                                                
+                                                sum += kernel_s[di+1][dj+1] * img_s[ni][nj];
+                                        }
+                                        else if (row+di >= 0 && col+dj >= 0 && row+di < n && col+dj < n)
+                                        {
+                                                sum += kernel_s[di+1][dj+1] * img_d[(row+di) * n + (col+dj)];
                                         }
                                 }
                         }
@@ -87,6 +84,9 @@ namespace solution
                 #pragma omp parallel for num_threads(gpu_count)
                 for (int gpu_id = 0; gpu_id < gpu_count; gpu_id++)
                 {
+                        if (gpu_count ==1){
+                                break;
+                        }
                         cudaSetDevice(gpu_id);
                         float *img_d, *kernel_d, *result_d;
                         CUDA_ERROR_CHECK(cudaMalloc((void**)&img_d, size * sizeof(float)));
