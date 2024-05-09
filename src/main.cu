@@ -4,6 +4,9 @@
 #include <cstdint>
 #include <filesystem>
 #include <string>
+#include <unistd.h>
+#include <fcntl.h>
+#include <sys/mman.h>
 
 namespace solution
 {
