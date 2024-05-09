@@ -31,6 +31,10 @@ namespace solution
                 int row = blockIdx.y * blockDim.y + threadIdx.y + start_row;
                 if (row < n && col < n)
                 {
+                        if (row == 0 && col == 0)
+                        {
+                                printf("1. %d %d\n", row, col);
+                        }
                         float sum = 0.0;
                         for(int di = -1; di <= 1; di++)
                         {
