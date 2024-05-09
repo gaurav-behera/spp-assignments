@@ -71,27 +71,22 @@ namespace solution
                 
 
                 float *img_d, *kernel_d, *result_d;
-                cudaMalloc((void**)&img_d, size*sizeof(float));
-                cudaMemcpy(img_d, img, size*sizeof(float), cudaMemcpyHostToDevice);
+                CUDA_ERROR_CHECK(cudaMalloc((void**)&img_d, size*sizeof(float)));
+                CUDA_ERROR_CHECK(cudaMemcpy(img_d, img, size*sizeof(float), cudaMemcpyHostToDevice));
 
-                cudaMalloc((void**)&kernel_d, 9 * sizeof(float));
-                cudaMemcpy(kernel_d, kernel_flat, 9 * sizeof(float), cudaMemcpyHostToDevice);
+                CUDA_ERROR_CHECK(cudaMalloc((void**)&kernel_d, 9 * sizeof(float)));
+                CUDA_ERROR_CHECK(cudaMemcpy(kernel_d, kernel_flat, 9 * sizeof(float), cudaMemcpyHostToDevice));
 
-                cudaMalloc((void **) &result_d, size*sizeof(float));
+                CUDA_ERROR_CHECK(cudaMalloc((void **) &result_d, size*sizeof(float)));
 
                 dim3 DimGrid(num_rows/8, num_cols/8, 1);
                 dim3 DimBlock(8,8,1);
                 convolution2D<<<DimGrid, DimBlock>>>(img_d, kernel_d, result_d, num_cols);
 
-                cudaDeviceSynchronize();
-
-                // for(int i = 0; i< size; i++)
-                // {
-                //         std::cout << result[i] << " ";
-                // }
-                // std::cout << std::endl;
+                CUDA_ERROR_CHECK(cudaDeviceSynchronize());
 
                 cudaMemcpy(result, result_d, size*sizeof(float), cudaMemcpyDeviceToHost);
+                
                 return sol_path;
         }
 };
