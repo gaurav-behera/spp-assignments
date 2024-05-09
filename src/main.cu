@@ -69,7 +69,8 @@ namespace solution
                         kernel_flat[i] = kernel[i/3][i%3];
                 }
                 
-
+                cudaSetDevice(0);
+                
                 float *img_d, *kernel_d, *result_d;
                 CUDA_ERROR_CHECK(cudaMalloc((void**)&img_d, size*sizeof(float)));
                 CUDA_ERROR_CHECK(cudaMemcpy(img_d, img, size*sizeof(float), cudaMemcpyHostToDevice));
@@ -86,7 +87,7 @@ namespace solution
                 CUDA_ERROR_CHECK(cudaDeviceSynchronize());
 
                 cudaMemcpy(result, result_d, size*sizeof(float), cudaMemcpyDeviceToHost);
-                
+
                 return sol_path;
         }
 };
