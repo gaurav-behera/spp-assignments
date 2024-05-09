@@ -47,7 +47,7 @@ namespace solution
                         {
                                 for(int dj = -1; dj <= 1; dj++) 
                                 {
-                                        int ni = ty + di, nj = tx + dj;
+                                        // int ni = ty + di, nj = tx + dj;
                                 
                                         // if(ni >= 0 && ni < TILE_WIDTH && nj >= 0 && nj < TILE_WIDTH) 
                                         // {
@@ -106,10 +106,13 @@ namespace solution
                         dim3 DimBlock(TILE_WIDTH, TILE_WIDTH, 1);
 
                         convolution2D<<<DimGrid, DimBlock>>>(img_d, result_d, num_cols, gpu_id, gpu_count);
+                        std::cout << "kernel " << gpu_id << " dont" << (size/gpu_count)*gpu_id << " " << std::endl;
                         
                         cudaDeviceSynchronize();
                         
                         CUDA_ERROR_CHECK(cudaMemcpy(result + (size/gpu_count)*gpu_id, result_d, (size/gpu_count) * sizeof(float) , cudaMemcpyDeviceToHost));
+
+
                 }
 
 
