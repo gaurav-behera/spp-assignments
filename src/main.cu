@@ -24,7 +24,7 @@ namespace solution
                 }
         }
 
-        #define TILE_WIDTH 128
+        #define TILE_WIDTH 32
         __global__ void convolution2D(float *img_d, float *kernel_d, float* result_d, int n)
         {
                 int col = blockIdx.x * blockDim.x + threadIdx.x;
