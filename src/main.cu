@@ -24,9 +24,9 @@ namespace solution
                 }
         }
 
-        __global__ void convolution2D(float *img_d, float *kernel_d, float* result_d, int n, int start_row, int start_col)
+        __global__ void convolution2D(float *img_d, float *kernel_d, float* result_d, int n, int start_row)
         {
-                int col = blockIdx.x * blockDim.x + threadIdx.x + start_col;
+                int col = blockIdx.x * blockDim.x + threadIdx.x;
                 int row = blockIdx.y * blockDim.y + threadIdx.y + start_row;
                 if (row < n && col < n)
                 {
@@ -42,7 +42,7 @@ namespace solution
                                         }
                                 }
                         }
-                        result_d[row*n+col] = sum;
+                        result_d[(row-start_row)*n+col] = sum;
                 }
         }
 
@@ -76,9 +76,8 @@ namespace solution
                         cudaSetDevice(gpu_id);
 
                         int start_row = gpu_id * rows_per_gpu;
-                        int end_row = (gpu_id == num_gpus - 1) ? num_rows : start_row + rows_per_gpu;
+                        int end_row = start_row + rows_per_gpu;
 
-                        int rows_to_process = end_row - start_row;
 
                         float *img_d, *kernel_d, *result_d;
                         CUDA_ERROR_CHECK(cudaMalloc((void**)&img_d, size * sizeof(float)));
@@ -87,15 +86,15 @@ namespace solution
                         CUDA_ERROR_CHECK(cudaMalloc((void**)&kernel_d, 9 * sizeof(float)));
                         CUDA_ERROR_CHECK(cudaMemcpy(kernel_d, kernel_flat, 9 * sizeof(float), cudaMemcpyHostToDevice));
 
-                        CUDA_ERROR_CHECK(cudaMalloc((void **)&result_d, size * sizeof(float)));
+                        CUDA_ERROR_CHECK(cudaMalloc((void **)&result_d, num_cols*rows_per_gpu * sizeof(float)));
 
-                        dim3 DimGrid((num_cols + 7) / 8, (rows_to_process + 7) / 8, 1);
+                        dim3 DimGrid(rows_per_gpu / 8, num_cols / 8, 1);
                         dim3 DimBlock(8, 8, 1);
-                        convolution2D<<<DimGrid, DimBlock>>>(img_d, kernel_d, result_d, num_cols, start_row, 0);
+                        convolution2D<<<DimGrid, DimBlock>>>(img_d, kernel_d, result_d, num_cols, start_row);
                         
                         cudaDeviceSynchronize();
                         
-                        CUDA_ERROR_CHECK(cudaMemcpy(result + start_row * num_cols, result_d, rows_to_process * num_cols * sizeof(float), cudaMemcpyDeviceToHost));
+                        CUDA_ERROR_CHECK(cudaMemcpy(result + start_row * num_cols, result_d, rows_per_gpu * num_cols * sizeof(float), cudaMemcpyDeviceToHost));
 
                         CUDA_ERROR_CHECK(cudaFree(img_d));
                         CUDA_ERROR_CHECK(cudaFree(kernel_d));
