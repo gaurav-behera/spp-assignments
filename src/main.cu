@@ -26,11 +26,23 @@ namespace solution
 
         __global__ void convolution2D(float *img_d, float *kernel_d, float* result_d, int n)
         {
-                int i = blockIdx.x * blockDim.x + threadIdx.x;
-                // printf("Hello from the GPU\n");
-                if (i < n)
+                int col = blockIdx.x * blockDim.x + threadIdx.x;
+                int row = blockIdx.y * blockDim.y + threadIdx.y;
+                if (row < n && col < n)
                 {
-                        result_d[i] = img_d[i];
+                        float sum = 0.0;
+                        for(int di = -1; di <= 1; di++)
+                        {
+		                for(int dj = -1; dj <= 1; dj++) 
+                                {
+		        	        int ni = row + di, nj = col + dj;
+		                        if(ni >= 0 and ni < n and nj >= 0 and nj < n) 
+                                        {
+		            	                sum += kernel_d[(di+1)*3 + dj+1] * img_d[ni * n + nj];
+                                        }
+                                }
+	        	}
+                        result_d[row*n+col] = sum;
                 }
         }
 
@@ -56,7 +68,9 @@ namespace solution
 
                 cudaMalloc((void **) &result_d, size);
 
-                convolution2D<<<1, 1>>>(img_d, kernel_d, result_d, size);
+                dim3 DimGrid(num_rows/8, num_cols/8, 1);
+                dim3 DimBlock(8,8,1);
+                convolution2D<<<DimGrid, DimBlock>>>(img_d, kernel_d, result_d, num_cols);
 
                 cudaDeviceSynchronize();
 
