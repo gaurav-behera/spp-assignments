@@ -84,7 +84,7 @@ namespace solution
                 #pragma omp parallel for num_threads(gpu_count)
                 for (int gpu_id = 0; gpu_id < gpu_count; gpu_id++)
                 {
-                        if (gpu_count ==1){
+                        if (gpu_count ==0){
                                 break;
                         }
                         cudaSetDevice(gpu_id);
