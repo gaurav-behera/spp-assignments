@@ -28,7 +28,7 @@ namespace solution
         __global__ void convolution2D(float *img_d, float *kernel_d, float* result_d, int n, int gpu_id, int gpu_count)
         {
                 // __shared__ float img_s[TILE_WIDTH][TILE_WIDTH];
-                // __shared__ float kernel_s[3][3];
+                __shared__ float kernel_s[3][3];
 
                 int tx = threadIdx.x, ty = threadIdx.y;
                 int col = blockIdx.x * blockDim.x + tx;
