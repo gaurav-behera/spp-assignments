@@ -27,18 +27,19 @@ namespace solution
         }
 
         #define TILE_WIDTH 32
-        __global__ void convolution2D(float *img_d, float *kernel_d, float* result_d, int n, int gpu_id, int gpu_count)
+        __global__ void convolution2D(float *img_d, float* result_d, int n, int gpu_id, int gpu_count)
         {
                 __shared__ float img_s[TILE_WIDTH][TILE_WIDTH];
-                __shared__ float kernel_s[3][3];
+                float kernel[3][3] = 
+                        { 0.0625f, 0.125f, 0.0625f },
+                        { 0.125f, 0.25f, 0.125f },
+                        { 0.0625f, 0.125f, 0.0625f };
 
                 int tx = threadIdx.x, ty = threadIdx.y;
                 int row = blockIdx.y * blockDim.y + ty + gpu_id*n/gpu_count;
                 int col = blockIdx.x * blockDim.x + tx;
                 if (row < n && col < n)
                 {
-                        if (tx < 3 && ty < 3)
-                                kernel_s[tx][ty] = kernel_d[tx*3+ty];
                         img_s[tx][ty] = img_d[row*n+col];
                         __syncthreads();
                         float sum = 0.0;
@@ -50,11 +51,11 @@ namespace solution
                                 
                                         if(ni >= 0 && ni < TILE_WIDTH && nj >= 0 && nj < TILE_WIDTH) 
                                         {
-                                                sum += kernel_s[di+1][dj+1] * img_s[ni][nj];
+                                                sum += kernel[di+1][dj+1] * img_s[ni][nj];
                                         }
                                         else if (row+di >= 0 && col+dj >= 0 && row+di < n && col+dj < n)
                                         {
-                                                sum += kernel_s[di+1][dj+1] * img_d[(row+di) * n + (col+dj)];
+                                                sum += kernel[di+1][dj+1] * img_d[(row+di) * n + (col+dj)];
                                         }
                                 }
                         }
@@ -75,32 +76,32 @@ namespace solution
                 if (ftruncate(result_fd, sizeof(float) * size) != 0) return sol_path;
                 float *result = reinterpret_cast<float *>(mmap(NULL, sizeof(float) * size, PROT_WRITE | PROT_READ, MAP_SHARED, result_fd, 0));
 
-                float kernel_flat[9];
-                for (int i = 0; i < 9; i++)
-                {
-                        kernel_flat[i] = kernel[i/3][i%3];
-                }
+                // float kernel_flat[9];
+                // for (int i = 0; i < 9; i++)
+                // {
+                //         kernel_flat[i] = kernel[i/3][i%3];
+                // }
                 int gpu_count = 2;
                 #pragma omp parallel for num_threads(gpu_count)
                 for (int gpu_id = 0; gpu_id < gpu_count; gpu_id++)
                 {
-                        if (gpu_id ==1){
-                                break;
-                        }
+                        // if (gpu_id ==1){
+                        //         break;
+                        // }
                         cudaSetDevice(gpu_id);
                         float *img_d, *kernel_d, *result_d;
                         CUDA_ERROR_CHECK(cudaMalloc((void**)&img_d, size * sizeof(float)));
                         CUDA_ERROR_CHECK(cudaMemcpy(img_d, img, size * sizeof(float), cudaMemcpyHostToDevice));
         
-                        CUDA_ERROR_CHECK(cudaMalloc((void**)&kernel_d, 9 * sizeof(float)));
-                        CUDA_ERROR_CHECK(cudaMemcpy(kernel_d, kernel_flat, 9 * sizeof(float), cudaMemcpyHostToDevice));
+                        // CUDA_ERROR_CHECK(cudaMalloc((void**)&kernel_d, 9 * sizeof(float)));
+                        // CUDA_ERROR_CHECK(cudaMemcpy(kernel_d, kernel_flat, 9 * sizeof(float), cudaMemcpyHostToDevice));
         
                         CUDA_ERROR_CHECK(cudaMalloc((void **)&result_d, (size/gpu_count) * sizeof(float)));
         
                         dim3 DimGrid(num_rows / (gpu_count * TILE_WIDTH), num_cols / TILE_WIDTH, 1);
                         dim3 DimBlock(TILE_WIDTH, TILE_WIDTH, 1);
 
-                        convolution2D<<<DimGrid, DimBlock>>>(img_d, kernel_d, result_d, num_cols, gpu_id, gpu_count);
+                        convolution2D<<<DimGrid, DimBlock>>>(img_d, result_d, num_cols, gpu_id, gpu_count);
                         
                         cudaDeviceSynchronize();
                         
